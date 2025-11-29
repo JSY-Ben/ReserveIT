@@ -269,6 +269,7 @@ function get_model(int $modelId): array
  * @return int
  * @throws Exception
  */
+
 function get_model_hardware_count(int $modelId): int
 {
     $model = get_model($modelId);
@@ -282,4 +283,146 @@ function get_model_hardware_count(int $modelId): int
     }
 
     return 0;
+}
+
+/**
+ * Find a single asset by asset_tag.
+ *
+ * This uses the /hardware endpoint with a search, then looks for an
+ * exact asset_tag match. It does NOT rely on /hardware/bytag so it
+ * stays compatible across Snipe-IT versions.
+ *
+ * @param string $tag
+ * @return array
+ * @throws Exception if no or ambiguous match
+ */
+function find_asset_by_tag(string $tag): array
+{
+    $tagTrim = trim($tag);
+    if ($tagTrim === '') {
+        throw new InvalidArgumentException('Asset tag cannot be empty.');
+    }
+
+    // Search hardware with a small limit
+    $params = [
+        'search' => $tagTrim,
+        'limit'  => 50,
+    ];
+
+    $data = snipeit_request('GET', 'hardware', $params);
+    if (!isset($data['rows']) || !is_array($data['rows']) || count($data['rows']) === 0) {
+        throw new Exception("No assets found in Snipe-IT matching tag '{$tagTrim}'.");
+    }
+
+    // Look for an exact asset_tag match (case-insensitive)
+    $exactMatches = [];
+    foreach ($data['rows'] as $row) {
+        $rowTag = $row['asset_tag'] ?? '';
+        if (strcasecmp(trim($rowTag), $tagTrim) === 0) {
+            $exactMatches[] = $row;
+        }
+    }
+
+    if (count($exactMatches) === 1) {
+        return $exactMatches[0];
+    }
+
+    if (count($exactMatches) > 1) {
+        throw new Exception("Multiple assets found with asset_tag '{$tagTrim}'. Please disambiguate in Snipe-IT.");
+    }
+
+    // No exact matches, but we got some approximate results
+    // You can choose to accept the first or to treat as "not found".
+    // Here we treat as not found to avoid wrong checkouts.
+    throw new Exception("No exact asset_tag match for '{$tagTrim}' in Snipe-IT.");
+}
+
+/**
+ * Find a single Snipe-IT user by email or name.
+ *
+ * Uses /users?search=... and tries to reduce to a single match:
+ *  - If exactly one row, returns it.
+ *  - If multiple rows and one has an exact email match (case-insensitive),
+ *    returns that.
+ *  - Otherwise throws an exception listing how many matches there were.
+ *
+ * @param string $query
+ * @return array
+ * @throws Exception
+ */
+function find_single_user_by_email_or_name(string $query): array
+{
+    $q = trim($query);
+    if ($q === '') {
+        throw new InvalidArgumentException('User search query cannot be empty.');
+    }
+
+    $params = [
+        'search' => $q,
+        'limit'  => 20,
+    ];
+
+    $data = snipeit_request('GET', 'users', $params);
+
+    if (!isset($data['rows']) || !is_array($data['rows']) || count($data['rows']) === 0) {
+        throw new Exception("No Snipe-IT users found matching '{$q}'.");
+    }
+
+    $rows = $data['rows'];
+
+    // If exactly one result, use it
+    if (count($rows) === 1) {
+        return $rows[0];
+    }
+
+    // Try to find exact email match
+    $exactEmailMatches = [];
+    foreach ($rows as $row) {
+        $email = $row['email'] ?? '';
+        if ($email !== '' && strcasecmp(trim($email), $q) === 0) {
+            $exactEmailMatches[] = $row;
+        }
+    }
+
+    if (count($exactEmailMatches) === 1) {
+        return $exactEmailMatches[0];
+    }
+
+    // Multiple matches, ambiguous
+    $count = count($rows);
+    throw new Exception("{$count} users matched '{$q}' in Snipe-IT; please refine (e.g. use full email).");
+}
+
+/**
+ * Check out a single asset to a Snipe-IT user by ID.
+ *
+ * Uses POST /hardware/{id}/checkout
+ *
+ * @param int    $assetId
+ * @param int    $userId
+ * @param string $note
+ * @return void
+ * @throws Exception
+ */
+function checkout_asset_to_user(int $assetId, int $userId, string $note = ''): void
+{
+    if ($assetId <= 0) {
+        throw new InvalidArgumentException('Invalid asset ID for checkout.');
+    }
+    if ($userId <= 0) {
+        throw new InvalidArgumentException('Invalid user ID for checkout.');
+    }
+
+    $payload = [
+        'checkout_to_type' => 'user',
+        'checkout_to_id'   => $userId,
+    ];
+
+    if ($note !== '') {
+        $payload['note'] = $note;
+    }
+
+    // Snipe-IT may also support expected_checkin, etc., but we
+    // keep it simple here.
+    snipeit_request('POST', 'hardware/' . $assetId . '/checkout', $payload);
 }
