@@ -103,6 +103,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $assetTag  = $asset['asset_tag'] ?? '';
                 $assetName = $asset['name'] ?? '';
                 $modelName = $asset['model']['name'] ?? '';
+                $status    = $asset['status_label'] ?? '';
+
+                // Normalise status label to a string (API may return array/object)
+                if (is_array($status)) {
+                    $status = $status['name'] ?? $status['status_meta'] ?? $status['label'] ?? '';
+                }
 
                 if ($assetId <= 0 || $assetTag === '') {
                     throw new Exception('Asset record from Snipe-IT is missing id/asset_tag.');
@@ -114,7 +120,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     'asset_tag'  => $assetTag,
                     'name'       => $assetName,
                     'model'      => $modelName,
-                    'status'     => $asset['status_label'] ?? '',
+                    'status'     => $status,
                 ];
 
                 $checkoutMessages[] = "Added asset {$assetTag} ({$assetName}) to checkout list.";
@@ -342,7 +348,13 @@ $isStaff = !empty($currentUser['is_admin']);
                                         <td><?= htmlspecialchars($asset['asset_tag']) ?></td>
                                         <td><?= htmlspecialchars($asset['name']) ?></td>
                                         <td><?= htmlspecialchars($asset['model']) ?></td>
-                                        <td><?= htmlspecialchars($asset['status']) ?></td>
+                                        <?php
+                                            $statusText = $asset['status'] ?? '';
+                                            if (is_array($statusText)) {
+                                                $statusText = $statusText['name'] ?? $statusText['status_meta'] ?? $statusText['label'] ?? '';
+                                            }
+                                        ?>
+                                        <td><?= htmlspecialchars((string)$statusText) ?></td>
                                         <td>
                                             <a href="staff_checkout.php?remove=<?= (int)$asset['id'] ?>"
                                                class="btn btn-sm btn-outline-danger">
