@@ -428,8 +428,26 @@ function checkout_asset_to_user(int $assetId, int $userId, string $note = ''): v
     $resp = snipeit_request('POST', 'hardware/' . $assetId . '/checkout', $payload);
 
     // Basic sanity check: API should report success
-    if (isset($resp['status']) && $resp['status'] !== 'success') {
-        $msg = $resp['messages'][0] ?? ($resp['message'] ?? 'Unknown API response');
-        throw new Exception('Snipe-IT checkout did not succeed: ' . $msg);
+    $status = $resp['status'] ?? 'success';
+
+    // Flatten any messages into a readable string
+    $messagesField = $resp['messages'] ?? ($resp['message'] ?? '');
+    $flatMessages  = [];
+    if (is_array($messagesField)) {
+        array_walk_recursive($messagesField, function ($val) use (&$flatMessages) {
+            if (is_string($val) && trim($val) !== '') {
+                $flatMessages[] = $val;
+            }
+        });
+    } elseif (is_string($messagesField) && trim($messagesField) !== '') {
+        $flatMessages[] = $messagesField;
+    }
+    $message = $flatMessages ? implode('; ', $flatMessages) : 'Unknown API response';
+
+    // Treat missing status as success unless we spotted explicit error messages
+    $hasExplicitError = is_array($messagesField) && isset($messagesField['error']);
+
+    if ($status !== 'success' || $hasExplicitError) {
+        throw new Exception('Snipe-IT checkout did not succeed: ' . $message);
     }
 }
