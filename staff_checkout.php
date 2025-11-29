@@ -251,8 +251,8 @@ $isStaff = !empty($currentUser['is_admin']);
         <div class="top-bar mb-3">
             <div class="top-bar-user">
                 Logged in as:
-                <strong><?= htmlspecialchars(trim($currentUser['first_name'] . ' ' . $currentUser['last_name'])) ?></strong>
-                (<?= htmlspecialchars($currentUser['email']) ?>)
+                <strong><?= h(trim($currentUser['first_name'] . ' ' . $currentUser['last_name'])) ?></strong>
+                (<?= h($currentUser['email']) ?>)
             </div>
             <div class="top-bar-actions">
                 <a href="logout.php" class="btn btn-link btn-sm">Log out</a>
@@ -264,7 +264,7 @@ $isStaff = !empty($currentUser['is_admin']);
             <div class="alert alert-success">
                 <ul class="mb-0">
                     <?php foreach ($checkoutMessages as $m): ?>
-                        <li><?= htmlspecialchars($m) ?></li>
+                        <li><?= h($m) ?></li>
                     <?php endforeach; ?>
                 </ul>
             </div>
@@ -274,7 +274,7 @@ $isStaff = !empty($currentUser['is_admin']);
             <div class="alert alert-danger">
                 <ul class="mb-0">
                     <?php foreach ($checkoutErrors as $e): ?>
-                        <li><?= htmlspecialchars($e) ?></li>
+                        <li><?= h($e) ?></li>
                     <?php endforeach; ?>
                 </ul>
             </div>
@@ -291,7 +291,7 @@ $isStaff = !empty($currentUser['is_admin']);
 
                 <?php if ($todayError): ?>
                     <div class="alert alert-danger">
-                        Could not load today’s bookings: <?= htmlspecialchars($todayError) ?>
+                        Could not load today’s bookings: <?= h($todayError) ?>
                     </div>
                 <?php endif; ?>
 
@@ -321,11 +321,11 @@ $isStaff = !empty($currentUser['is_admin']);
                                     ?>
                                     <tr>
                                         <td>#<?= $resId ?></td>
-                                        <td><?= htmlspecialchars($res['student_name'] ?? '(Unknown)') ?></td>
-                                        <td><?= htmlspecialchars($summary) ?></td>
-                                        <td><?= htmlspecialchars(uk_datetime_display($res['start_datetime'] ?? '')) ?></td>
-                                        <td><?= htmlspecialchars(uk_datetime_display($res['end_datetime'] ?? '')) ?></td>
-                                        <td><?= htmlspecialchars($res['status'] ?? '') ?></td>
+                                        <td><?= h($res['student_name'] ?? '(Unknown)') ?></td>
+                                        <td><?= h($summary) ?></td>
+                                        <td><?= h(uk_datetime_display($res['start_datetime'] ?? '')) ?></td>
+                                        <td><?= h(uk_datetime_display($res['end_datetime'] ?? '')) ?></td>
+                                        <td><?= h($res['status'] ?? '') ?></td>
                                     </tr>
                                 <?php endforeach; ?>
                             </tbody>
@@ -382,16 +382,16 @@ $isStaff = !empty($currentUser['is_admin']);
                             <tbody>
                                 <?php foreach ($checkoutAssets as $asset): ?>
                                     <tr>
-                                        <td><?= htmlspecialchars($asset['asset_tag']) ?></td>
-                                        <td><?= htmlspecialchars($asset['name']) ?></td>
-                                        <td><?= htmlspecialchars($asset['model']) ?></td>
+                                        <td><?= h($asset['asset_tag']) ?></td>
+                                        <td><?= h($asset['name']) ?></td>
+                                        <td><?= h($asset['model']) ?></td>
                                         <?php
                                             $statusText = $asset['status'] ?? '';
                                             if (is_array($statusText)) {
                                                 $statusText = $statusText['name'] ?? $statusText['status_meta'] ?? $statusText['label'] ?? '';
                                             }
                                         ?>
-                                        <td><?= htmlspecialchars((string)$statusText) ?></td>
+                                        <td><?= h((string)$statusText) ?></td>
                                         <td>
                                             <a href="staff_checkout.php?remove=<?= (int)$asset['id'] ?>"
                                                class="btn btn-sm btn-outline-danger">
