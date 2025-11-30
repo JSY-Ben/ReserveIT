@@ -7,7 +7,7 @@ require_once __DIR__ . '/footer.php';
 function format_display_date($val): string
 {
     if (is_array($val)) {
-        $val = $val['date'] ?? '';
+        $val = $val['datetime'] ?? ($val['date'] ?? '');
     }
     if (empty($val)) {
         return '';

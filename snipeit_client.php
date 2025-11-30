@@ -641,11 +641,11 @@ function list_checked_out_assets(bool $overdueOnly = false): array
         // Normalize date fields
         $lastCheckout = $row['last_checkout'] ?? '';
         if (is_array($lastCheckout)) {
-            $lastCheckout = $lastCheckout['date'] ?? '';
+            $lastCheckout = $lastCheckout['datetime'] ?? ($lastCheckout['date'] ?? '');
         }
         $expectedCheckin = $row['expected_checkin'] ?? '';
         if (is_array($expectedCheckin)) {
-            $expectedCheckin = $expectedCheckin['date'] ?? '';
+            $expectedCheckin = $expectedCheckin['datetime'] ?? ($expectedCheckin['date'] ?? '');
         }
 
         // Overdue check
