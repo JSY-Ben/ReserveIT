@@ -107,7 +107,13 @@ try {
                                     $user = $user['name'] ?? ($user['username'] ?? '');
                                 }
                                 $checkedOut = $a['last_checkout'] ?? '';
+                                if (is_array($checkedOut)) {
+                                    $checkedOut = $checkedOut['date'] ?? '';
+                                }
                                 $expected   = $a['expected_checkin'] ?? '';
+                                if (is_array($expected)) {
+                                    $expected = $expected['date'] ?? '';
+                                }
                             ?>
                             <tr>
                                 <td><?= h($atag) ?></td>
