@@ -91,7 +91,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $assetId  = (int)$asset['id'];
                     $assetTag = $asset['asset_tag'] ?? '';
                     try {
-                        checkout_asset_to_user($assetId, $userId, $note);
+                        checkout_asset_to_user($assetId, $userId, $note, null);
                         $messages[] = "Checked out asset {$assetTag} to {$userName}.";
                     } catch (Throwable $e) {
                         $errors[] = "Failed to check out {$assetTag}: " . $e->getMessage();

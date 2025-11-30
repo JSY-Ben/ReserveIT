@@ -506,13 +506,14 @@ function find_single_user_by_email_or_name(string $query): array
  *
  * Uses POST /hardware/{id}/checkout
  *
- * @param int    $assetId
- * @param int    $userId
- * @param string $note
+ * @param int         $assetId
+ * @param int         $userId
+ * @param string      $note
+ * @param string|null $expectedCheckin ISO datetime string for expected checkin
  * @return void
  * @throws Exception
  */
-function checkout_asset_to_user(int $assetId, int $userId, string $note = ''): void
+function checkout_asset_to_user(int $assetId, int $userId, string $note = '', ?string $expectedCheckin = null): void
 {
     if ($assetId <= 0) {
         throw new InvalidArgumentException('Invalid asset ID for checkout.');
@@ -530,6 +531,9 @@ function checkout_asset_to_user(int $assetId, int $userId, string $note = ''): v
 
     if ($note !== '') {
         $payload['note'] = $note;
+    }
+    if (!empty($expectedCheckin)) {
+        $payload['expected_checkin'] = $expectedCheckin;
     }
 
     // Snipe-IT may also support expected_checkin, etc., but we

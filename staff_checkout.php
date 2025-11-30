@@ -381,7 +381,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     }
 
                     foreach ($assetsToCheckout as $a) {
-                        checkout_asset_to_user((int)$a['asset_id'], $userId, $note);
+                        checkout_asset_to_user((int)$a['asset_id'], $userId, $note, $selectedEnd);
                         $checkoutMessages[] = "Checked out asset {$a['asset_tag']} to {$userName}.";
                     }
 
@@ -457,7 +457,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     }
 
                     try {
-                        checkout_asset_to_user($assetId, $userId, $note);
+                        checkout_asset_to_user($assetId, $userId, $note, null);
                         $checkoutMessages[] = "Checked out asset {$assetTag} to {$userName}.";
                     } catch (Throwable $e) {
                         $checkoutErrors[] = "Failed to check out {$assetTag}: " . $e->getMessage();
