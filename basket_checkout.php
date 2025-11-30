@@ -166,6 +166,7 @@ try {
 </head>
 <body class="p-4">
 <div class="container">
+    <?= reserveit_logo_tag() ?>
     <h1>Thank you</h1>
     <p>Your booking has been submitted for <?= (int)$totalRequestedItems ?> item(s).</p>
     <p>

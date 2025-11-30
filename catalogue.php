@@ -105,6 +105,7 @@ try {
 <body class="p-4">
 <div class="container">
     <div class="page-shell">
+        <?= reserveit_logo_tag() ?>
         <div class="page-header">
             <h1>Equipment catalogue</h1>
             <div class="page-subtitle">

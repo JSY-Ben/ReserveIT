@@ -25,6 +25,7 @@ if (!empty($_SESSION['user']['email'])) {
 <body class="p-4">
 <div class="container">
     <div class="page-shell" style="max-width: 480px; margin: 0 auto;">
+        <?= reserveit_logo_tag() ?>
         <div class="page-header">
             <h1>Sign in</h1>
             <div class="page-subtitle">

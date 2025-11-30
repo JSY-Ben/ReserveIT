@@ -16,3 +16,30 @@ if (!function_exists('reserveit_footer')) {
             . '</footer>';
     }
 }
+
+if (!function_exists('reserveit_logo_tag')) {
+    function reserveit_logo_tag(?array $cfg = null): string
+    {
+        static $cachedConfig = null;
+        if ($cfg === null) {
+            if ($cachedConfig === null && is_file(__DIR__ . '/config.php')) {
+                $cachedConfig = require __DIR__ . '/config.php';
+            }
+            $cfg = $cachedConfig ?? [];
+        }
+
+        $logoUrl = '';
+        if (isset($cfg['app']['logo_url']) && trim($cfg['app']['logo_url']) !== '') {
+            $logoUrl = trim($cfg['app']['logo_url']);
+        }
+
+        if ($logoUrl === '') {
+            return '';
+        }
+
+        $urlEsc = htmlspecialchars($logoUrl, ENT_QUOTES, 'UTF-8');
+        return '<div class="app-logo text-center mb-3">'
+            . '<img src="' . $urlEsc . '" alt="ReserveIT logo" style="max-height:80px; width:auto; height:auto; max-width:100%; object-fit:contain;">'
+            . '</div>';
+    }
+}

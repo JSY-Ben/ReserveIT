@@ -31,6 +31,7 @@ $fullName = trim($user['first_name'] . ' ' . $user['last_name']);
 </head>
 <body class="p-4">
 <div class="container">
+    <?= reserveit_logo_tag() ?>
     <h1>Book: <?= htmlspecialchars($asset['name'] ?? 'Item') ?></h1>
     <p><a href="catalogue.php">&larr; Back to catalogue</a></p>
 

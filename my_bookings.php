@@ -62,6 +62,7 @@ try {
 <body class="p-4">
 <div class="container">
     <div class="page-shell">
+        <?= reserveit_logo_tag() ?>
         <div class="page-header">
             <h1>My bookings</h1>
             <div class="page-subtitle">

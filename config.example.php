@@ -62,6 +62,7 @@ return [
     'app' => [
         'timezone' => 'Europe/Jersey',
         'debug'    => true,
+        'logo_url' => '', // optional: full URL or relative path to logo image
         'missed_cutoff_minutes' => 60, // minutes after start time before marking reservation as missed
     ],
 ];
