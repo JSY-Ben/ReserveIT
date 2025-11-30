@@ -225,7 +225,11 @@ if ($selectedReservationId) {
                     $filtered  = [];
                     foreach ($assetsRaw as $a) {
                         $assigned = $a['assigned_to'] ?? ($a['assigned_to_fullname'] ?? '');
-                        $status   = strtolower((string)($a['status_label'] ?? ''));
+                        $statusRaw = $a['status_label'] ?? '';
+                        if (is_array($statusRaw)) {
+                            $statusRaw = $statusRaw['name'] ?? ($statusRaw['status_meta'] ?? '');
+                        }
+                        $status = strtolower((string)$statusRaw);
                         if (!empty($assigned)) {
                             continue;
                         }
