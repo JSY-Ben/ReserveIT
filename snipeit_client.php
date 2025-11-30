@@ -162,9 +162,14 @@ function get_bookable_models(
 
     // Determine total
     $total = $totalFromApi ?? count($allRows);
-    if ($total > SNIPEIT_MAX_MODELS_FETCH) {
-        $total = SNIPEIT_MAX_MODELS_FETCH; // we’ve capped at this many
-    }
+        if ($total > SNIPEIT_MAX_MODELS_FETCH) {
+            $total = SNIPEIT_MAX_MODELS_FETCH; // we’ve capped at this many
+        }
+
+    // Filter by requestable flag (Snipe-IT uses 'requestable' on models)
+    $allRows = array_values(array_filter($allRows, function ($row) {
+        return !empty($row['requestable']);
+    }));
 
     // Sort full set client-side according to requested sort
     $sort = $sort ?? '';
