@@ -301,7 +301,7 @@ if (!empty($categories)) {
                              style="z-index: 1050; max-height: 220px; overflow-y: auto; display: none;"></div>
                     </div>
                     <button class="btn btn-sm btn-primary" type="submit">Use</button>
-                    <button class="btn btn-sm btn-outline-secondary" type="button" onclick="clearBookingUser()">Clear</button>
+                    <button class="btn btn-sm btn-outline-secondary" type="button" onclick="revertToLoggedIn()">Revert to logged in user</button>
                 </form>
             </div>
         <?php endif; ?>
@@ -638,6 +638,16 @@ function clearBookingUser() {
     if (email) email.value = '';
     if (name) name.value = '';
     if (input) input.value = '';
+}
+
+function revertToLoggedIn() {
+    const email = document.getElementById('booking_user_email');
+    const name  = document.getElementById('booking_user_name');
+    const input = document.getElementById('booking_user_input');
+    if (email) email.value = <?= json_encode($currentUser['email'] ?? '') ?>;
+    if (name) name.value = <?= json_encode(trim(($currentUser['first_name'] ?? '') . ' ' . ($currentUser['last_name'] ?? ''))) ?>;
+    if (input) input.value = '';
+    document.querySelector('form[method=\"post\"][action=\"\"] button.btn-primary')?.click();
 }
 });
 </script>
