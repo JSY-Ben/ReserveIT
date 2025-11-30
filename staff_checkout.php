@@ -126,6 +126,7 @@ try {
         SELECT *
         FROM reservations
         WHERE DATE(start_datetime) = :today
+          AND status IN ('pending','confirmed')
         ORDER BY start_datetime ASC
     ";
     $stmt = $pdo->prepare($sql);
@@ -382,6 +383,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         checkout_asset_to_user((int)$a['asset_id'], $userId, $note);
                         $checkoutMessages[] = "Checked out asset {$a['asset_tag']} to {$userName}.";
                     }
+
+                    // Mark reservation as checked out (use existing status values)
+                    $upd = $pdo->prepare("UPDATE reservations SET status = 'completed' WHERE id = :id");
+                    $upd->execute([':id' => $selectedReservationId]);
+                    $checkoutMessages[] = 'Reservation marked as checked out.';
+
+                    // Clear selected reservation to avoid repeat
+                    unset($_SESSION['selected_reservation_id']);
+                    $selectedReservationId = null;
                 } catch (Throwable $e) {
                     $checkoutErrors[] = 'Reservation checkout failed: ' . $e->getMessage();
                 }
