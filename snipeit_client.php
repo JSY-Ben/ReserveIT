@@ -338,6 +338,46 @@ function find_asset_by_tag(string $tag): array
 }
 
 /**
+ * List hardware assets for a given model.
+ *
+ * @param int $modelId
+ * @param int $maxResults
+ * @return array
+ * @throws Exception
+ */
+function list_assets_by_model(int $modelId, int $maxResults = 300): array
+{
+    if ($modelId <= 0) {
+        throw new InvalidArgumentException('Model ID must be positive.');
+    }
+
+    $all    = [];
+    $limit  = min(200, max(1, $maxResults));
+    $offset = 0;
+
+    do {
+        $params = [
+            'model_id' => $modelId,
+            'limit'    => $limit,
+            'offset'   => $offset,
+        ];
+
+        $chunk = snipeit_request('GET', 'hardware', $params);
+        $rows  = isset($chunk['rows']) && is_array($chunk['rows']) ? $chunk['rows'] : [];
+
+        $all    = array_merge($all, $rows);
+        $count  = count($rows);
+        $offset += $limit;
+
+        if ($count < $limit || count($all) >= $maxResults) {
+            break;
+        }
+    } while (true);
+
+    return $all;
+}
+
+/**
  * Find a single Snipe-IT user by email or name.
  *
  * Uses /users?search=... and tries to reduce to a single match:

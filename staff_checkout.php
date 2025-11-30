@@ -195,6 +195,7 @@ $selectedItems       = [];
 $modelLimits         = [];
 $selectedStart       = '';
 $selectedEnd         = '';
+$modelAssets         = [];
 
 if ($selectedReservationId) {
     $stmt = $pdo->prepare("
@@ -218,6 +219,11 @@ if ($selectedReservationId) {
             $qty          = (int)($item['qty'] ?? 0);
             if ($mid > 0 && $qty > 0) {
                 $modelLimits[$mid] = $qty;
+                try {
+                    $modelAssets[$mid] = list_assets_by_model($mid, 300);
+                } catch (Throwable $e) {
+                    $modelAssets[$mid] = [];
+                }
             }
         }
     } else {
@@ -291,6 +297,76 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $checkoutMessages[] = "Added asset {$assetTag} ({$assetName}) to checkout list.";
             } catch (Throwable $e) {
                 $checkoutErrors[] = 'Could not add asset: ' . $e->getMessage();
+            }
+        }
+    } elseif ($mode === 'reservation_checkout') {
+        if (!$selectedReservation) {
+            $checkoutErrors[] = 'Please select a reservation for today before checking out.';
+        } else {
+            $checkoutTo = trim($_POST['reservation_checkout_to'] ?? '');
+            $note       = trim($_POST['reservation_note'] ?? '');
+            if ($checkoutTo === '') {
+                $checkoutErrors[] = 'Please enter the Snipe-IT user (email or name) to check out to.';
+            }
+
+            $selectedAssetsInput = $_POST['selected_assets'] ?? [];
+            $assetsToCheckout    = [];
+
+            // Validate selections against required quantities
+            foreach ($selectedItems as $item) {
+                $mid    = (int)$item['model_id'];
+                $qty    = (int)$item['qty'];
+                $choices = $modelAssets[$mid] ?? [];
+                $choicesById = [];
+                foreach ($choices as $c) {
+                    $choicesById[(int)($c['id'] ?? 0)] = $c;
+                }
+
+                $selectedForModel = isset($selectedAssetsInput[$mid]) && is_array($selectedAssetsInput[$mid])
+                    ? array_values($selectedAssetsInput[$mid])
+                    : [];
+
+                if (count($selectedForModel) < $qty) {
+                    $checkoutErrors[] = "Please select {$qty} asset(s) for model {$item['name']}.";
+                    continue;
+                }
+
+                $seen = [];
+                for ($i = 0; $i < $qty; $i++) {
+                    $assetIdSel = (int)($selectedForModel[$i] ?? 0);
+                    if ($assetIdSel <= 0 || !isset($choicesById[$assetIdSel])) {
+                        $checkoutErrors[] = "Invalid asset selection for model {$item['name']}.";
+                        continue;
+                    }
+                    if (isset($seen[$assetIdSel])) {
+                        $checkoutErrors[] = "Duplicate asset selected for model {$item['name']}.";
+                        continue;
+                    }
+                    $seen[$assetIdSel] = true;
+                    $assetsToCheckout[] = [
+                        'asset_id'  => $assetIdSel,
+                        'asset_tag' => $choicesById[$assetIdSel]['asset_tag'] ?? ('ID ' . $assetIdSel),
+                    ];
+                }
+            }
+
+            if (empty($checkoutErrors) && !empty($assetsToCheckout)) {
+                try {
+                    $user = find_single_user_by_email_or_name($checkoutTo);
+                    $userId   = (int)($user['id'] ?? 0);
+                    $userName = $user['name'] ?? ($user['username'] ?? $checkoutTo);
+
+                    if ($userId <= 0) {
+                        throw new Exception('Matched user has no valid ID.');
+                    }
+
+                    foreach ($assetsToCheckout as $a) {
+                        checkout_asset_to_user((int)$a['asset_id'], $userId, $note);
+                        $checkoutMessages[] = "Checked out asset {$a['asset_tag']} to {$userName}.";
+                    }
+                } catch (Throwable $e) {
+                    $checkoutErrors[] = 'Reservation checkout failed: ' . $e->getMessage();
+                }
             }
         }
     } elseif ($mode === 'checkout') {
@@ -473,60 +549,83 @@ $isStaff = !empty($currentUser['is_admin']);
             </div>
         <?php endif; ?>
 
-        <!-- Today’s bookings -->
-        <div class="card mb-4">
-            <div class="card-body">
-                <h5 class="card-title">Today’s bookings (reference)</h5>
-                <p class="card-text">
-                    These are bookings from the app that start today. Use this as a guide when
-                    deciding what to hand out.
-                </p>
+        <!-- Reservation checkout (per booking) -->
+        <?php if ($selectedReservation): ?>
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h5 class="card-title">Reservation checkout</h5>
+                    <p class="card-text">
+                        Choose assets for each model in reservation #<?= (int)$selectedReservation['id'] ?>.
+                    </p>
 
-                <?php if ($todayError): ?>
-                    <div class="alert alert-danger">
-                        Could not load today’s bookings: <?= h($todayError) ?>
-                    </div>
-                <?php endif; ?>
+                    <form method="post">
+                        <input type="hidden" name="mode" value="reservation_checkout">
 
-                <?php if (empty($todayBookings) && !$todayError): ?>
-                    <div class="alert alert-info mb-0">
-                        There are no bookings starting today.
-                    </div>
-                <?php elseif (!empty($todayBookings)): ?>
-                    <div class="table-responsive">
-                        <table class="table table-sm table-striped align-middle mb-0">
-                            <thead>
-                                <tr>
-                                    <th>ID</th>
-                                    <th>Student</th>
-                                    <th>Items</th>
-                                    <th>Start</th>
-                                    <th>End</th>
-                                    <th>Status</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <?php foreach ($todayBookings as $res): ?>
-                                    <?php
-                                    $resId = (int)$res['id'];
-                                    $items = get_reservation_items_with_names($pdo, $resId);
-                                    $summary = build_items_summary_text($items);
-                                    ?>
-                                    <tr>
-                                        <td>#<?= $resId ?></td>
-                                        <td><?= h($res['student_name'] ?? '(Unknown)') ?></td>
-                                        <td><?= h($summary) ?></td>
-                                        <td><?= h(uk_datetime_display($res['start_datetime'] ?? '')) ?></td>
-                                        <td><?= h(uk_datetime_display($res['end_datetime'] ?? '')) ?></td>
-                                        <td><?= h($res['status'] ?? '') ?></td>
-                                    </tr>
-                                <?php endforeach; ?>
-                            </tbody>
-                        </table>
-                    </div>
-                <?php endif; ?>
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Check out to (Snipe-IT user)</label>
+                                <div class="position-relative user-autocomplete-wrapper">
+                                    <input type="text"
+                                           name="reservation_checkout_to"
+                                           class="form-control user-autocomplete"
+                                           autocomplete="off"
+                                           placeholder="Start typing email or name">
+                                    <div class="list-group position-absolute w-100"
+                                         data-suggestions
+                                         style="z-index: 1050; max-height: 220px; overflow-y: auto; display: none;"></div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Note (optional)</label>
+                                <input type="text"
+                                       name="reservation_note"
+                                       class="form-control"
+                                       placeholder="Optional note to store with checkout">
+                            </div>
+                        </div>
+
+                        <?php foreach ($selectedItems as $item): ?>
+                            <?php
+                                $mid     = (int)$item['model_id'];
+                                $qty     = (int)$item['qty'];
+                                $options = $modelAssets[$mid] ?? [];
+                            ?>
+                            <div class="mb-3">
+                                <label class="form-label">
+                                    <?= h($item['name'] ?? ('Model #' . $mid)) ?> (need <?= $qty ?>)
+                                </label>
+                                <?php if (empty($options)): ?>
+                                    <div class="alert alert-warning mb-0">
+                                        No assets found in Snipe-IT for this model.
+                                    </div>
+                                <?php else: ?>
+                                    <?php for ($i = 0; $i < $qty; $i++): ?>
+                                        <select class="form-select mb-2"
+                                                name="selected_assets[<?= $mid ?>][]">
+                                            <option value="">-- Select asset --</option>
+                                            <?php foreach ($options as $opt): ?>
+                                                <?php
+                                                $aid   = (int)($opt['id'] ?? 0);
+                                                $atag  = $opt['asset_tag'] ?? ('ID ' . $aid);
+                                                $aname = $opt['name'] ?? '';
+                                                $astat = $opt['status_label'] ?? '';
+                                                $label = trim($atag . ' – ' . $aname . ($astat ? " ({$astat})" : ''));
+                                                ?>
+                                                <option value="<?= $aid ?>"><?= h($label) ?></option>
+                                            <?php endforeach; ?>
+                                        </select>
+                                    <?php endfor; ?>
+                                <?php endif; ?>
+                            </div>
+                        <?php endforeach; ?>
+
+                        <button type="submit" class="btn btn-primary">
+                            Check out selected assets for this reservation
+                        </button>
+                    </form>
+                </div>
             </div>
-        </div>
+        <?php endif; ?>
 
         <!-- Bulk checkout panel -->
         <div class="card">
@@ -606,17 +705,15 @@ $isStaff = !empty($currentUser['is_admin']);
                                 <label class="form-label">
                                     Check out to (Snipe-IT user email or name)
                                 </label>
-                                <div class="position-relative">
+                                <div class="position-relative user-autocomplete-wrapper">
                                     <input type="text"
-                                           id="checkout_to"
                                            name="checkout_to"
-                                           class="form-control"
+                                           class="form-control user-autocomplete"
                                            autocomplete="off"
                                            placeholder="Start typing email or name">
-                                    <div id="userSuggestions"
-                                         class="list-group position-absolute w-100"
-                                         style="z-index: 1050; max-height: 220px; overflow-y: auto; display: none;">
-                                    </div>
+                                    <div class="list-group position-absolute w-100"
+                                         data-suggestions
+                                         style="z-index: 1050; max-height: 220px; overflow-y: auto; display: none;"></div>
                                 </div>
                             </div>
                             <div class="col-md-6">
@@ -641,77 +738,80 @@ $isStaff = !empty($currentUser['is_admin']);
 
 <script>
 (function () {
-    const input = document.getElementById('checkout_to');
-    const list = document.getElementById('userSuggestions');
-    if (!input || !list) return;
+    const wrappers = document.querySelectorAll('.user-autocomplete-wrapper');
+    wrappers.forEach((wrapper) => {
+        const input = wrapper.querySelector('.user-autocomplete');
+        const list  = wrapper.querySelector('[data-suggestions]');
+        if (!input || !list) return;
 
-    let timer = null;
-    let lastQuery = '';
+        let timer = null;
+        let lastQuery = '';
 
-    input.addEventListener('input', () => {
-        const q = input.value.trim();
-        if (q.length < 2) {
-            hideSuggestions();
-            return;
-        }
-        if (timer) clearTimeout(timer);
-        timer = setTimeout(() => fetchSuggestions(q), 250);
-    });
-
-    input.addEventListener('blur', () => {
-        setTimeout(hideSuggestions, 150); // allow click
-    });
-
-    function fetchSuggestions(q) {
-        lastQuery = q;
-        fetch('staff_checkout.php?ajax=user_search&q=' + encodeURIComponent(q), {
-            headers: { 'X-Requested-With': 'XMLHttpRequest' }
-        })
-            .then((res) => res.ok ? res.json() : Promise.reject())
-            .then((data) => {
-                if (lastQuery !== q) return; // stale
-                renderSuggestions(data.results || []);
-            })
-            .catch(() => {
-                renderSuggestions([]);
-            });
-    }
-
-    function renderSuggestions(items) {
-        list.innerHTML = '';
-        if (!items || !items.length) {
-            hideSuggestions();
-            return;
-        }
-
-        items.forEach((item) => {
-            const email = item.email || '';
-            const name = item.name || item.username || email;
-            const label = (name && email && name !== email) ? `${name} (${email})` : (name || email);
-            const value = email || name;
-
-            const btn = document.createElement('button');
-            btn.type = 'button';
-            btn.className = 'list-group-item list-group-item-action';
-            btn.textContent = label;
-            btn.dataset.value = value;
-
-            btn.addEventListener('click', () => {
-                input.value = btn.dataset.value;
+        input.addEventListener('input', () => {
+            const q = input.value.trim();
+            if (q.length < 2) {
                 hideSuggestions();
-                input.focus();
-            });
-
-            list.appendChild(btn);
+                return;
+            }
+            if (timer) clearTimeout(timer);
+            timer = setTimeout(() => fetchSuggestions(q), 250);
         });
 
-        list.style.display = 'block';
-    }
+        input.addEventListener('blur', () => {
+            setTimeout(hideSuggestions, 150); // allow click
+        });
 
-    function hideSuggestions() {
-        list.style.display = 'none';
-        list.innerHTML = '';
-    }
+        function fetchSuggestions(q) {
+            lastQuery = q;
+            fetch('staff_checkout.php?ajax=user_search&q=' + encodeURIComponent(q), {
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            })
+                .then((res) => res.ok ? res.json() : Promise.reject())
+                .then((data) => {
+                    if (lastQuery !== q) return; // stale
+                    renderSuggestions(data.results || []);
+                })
+                .catch(() => {
+                    renderSuggestions([]);
+                });
+        }
+
+        function renderSuggestions(items) {
+            list.innerHTML = '';
+            if (!items || !items.length) {
+                hideSuggestions();
+                return;
+            }
+
+            items.forEach((item) => {
+                const email = item.email || '';
+                const name = item.name || item.username || email;
+                const label = (name && email && name !== email) ? `${name} (${email})` : (name || email);
+                const value = email || name;
+
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'list-group-item list-group-item-action';
+                btn.textContent = label;
+                btn.dataset.value = value;
+
+                btn.addEventListener('click', () => {
+                    input.value = btn.dataset.value;
+                    hideSuggestions();
+                    input.focus();
+                });
+
+                list.appendChild(btn);
+            });
+
+            list.style.display = 'block';
+        }
+
+        function hideSuggestions() {
+            list.style.display = 'none';
+            list.innerHTML = '';
+        }
+    });
 })();
 </script>
 </body>
