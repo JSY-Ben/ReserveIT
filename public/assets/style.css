@@ -1,17 +1,54 @@
 /* --------------------------------------------------
    Global / layout
--------------------------------------------------- */
+--------------------------------------------------- */
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700&display=swap');
+
+:root {
+    --bg: #f2f6ff;
+    --panel: #ffffff;
+    --border: #dbe6ff;
+    --text: #0f172a;
+    --muted: #5b6477;
+    --accent: #2563eb;
+    --accent-2: #0ea5e9;
+    --accent-warm: #f97316;
+    --shadow-soft: 0 14px 45px rgba(15, 23, 42, 0.12);
+}
 
 body {
-    background: #f4f5f7;
-    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    min-height: 100vh;
+    background:
+        radial-gradient(circle at 15% 20%, rgba(37, 99, 235, 0.18), transparent 28%),
+        radial-gradient(circle at 80% 0%, rgba(14, 165, 233, 0.16), transparent 26%),
+        radial-gradient(circle at 85% 60%, rgba(249, 115, 22, 0.12), transparent 24%),
+        linear-gradient(180deg, #f8fbff 0%, #eef3fb 50%, #f7fbff 100%);
+    font-family: 'Manrope', -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    color: var(--text);
 }
 
 .page-shell {
-    background: #ffffff;
-    border-radius: 0.75rem;
-    padding: 1.5rem;
-    box-shadow: 0 0.25rem 0.75rem rgba(15, 23, 42, 0.08);
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.96), rgba(244, 249, 255, 0.96));
+    border-radius: 1.1rem;
+    padding: 1.8rem;
+    box-shadow: var(--shadow-soft);
+    border: 1px solid var(--border);
+    position: relative;
+    overflow: hidden;
+}
+
+.page-shell::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: linear-gradient(135deg, rgba(37, 99, 235, 0.08), rgba(14, 165, 233, 0.05));
+    opacity: 0.6;
+    mix-blend-mode: screen;
+}
+
+.page-shell > * {
+    position: relative;
+    z-index: 1;
 }
 
 .page-header {
@@ -21,14 +58,16 @@ body {
 
 .page-header h1 {
     margin: 0;
-    font-size: 1.75rem;
-    font-weight: 600;
+    font-size: 1.9rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: var(--text);
 }
 
 .page-subtitle {
     margin-top: 0.25rem;
-    color: #6c757d;
-    font-size: 0.95rem;
+    color: var(--muted);
+    font-size: 0.98rem;
 }
 
 /* --------------------------------------------------
@@ -40,31 +79,38 @@ body {
     flex-wrap: wrap;
     gap: 0.5rem;
     margin-bottom: 1rem;
-    border-bottom: 1px solid #e5e7eb;
-    padding-bottom: 0.5rem;
+    padding: 0.65rem 0.75rem;
     justify-content: center;
+    background: linear-gradient(120deg, rgba(37, 99, 235, 0.08), rgba(14, 165, 233, 0.1));
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    box-shadow: 0 10px 25px rgba(37, 99, 235, 0.08);
 }
 
 .app-nav-link {
-    padding: 0.35rem 0.75rem;
+    padding: 0.45rem 0.95rem;
     border-radius: 999px;
     text-decoration: none;
-    font-size: 0.9rem;
-    color: #374151;
-    background: #f9fafb;
+    font-size: 0.92rem;
+    color: #0f172a;
+    background: rgba(255, 255, 255, 0.9);
     border: 1px solid transparent;
-    transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+    box-shadow: 0 4px 10px rgba(15, 23, 42, 0.04);
+    transition: transform 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
 }
 
 .app-nav-link:hover {
-    background: #e5f0ff;
-    color: #1d4ed8;
+    background: #e8f0ff;
+    color: var(--accent);
+    transform: translateY(-1px);
+    box-shadow: 0 8px 16px rgba(37, 99, 235, 0.14);
 }
 
 .app-nav-link.active {
-    background: #1d4ed8;
-    border-color: #1d4ed8;
+    background: linear-gradient(120deg, var(--accent), var(--accent-2));
+    border-color: rgba(37, 99, 235, 0.4);
     color: #ffffff;
+    box-shadow: 0 10px 20px rgba(37, 99, 235, 0.25);
 }
 
 .clamp-3 {
@@ -83,19 +129,21 @@ body {
     align-items: center;
     justify-content: space-between;
     gap: 0.75rem;
-    padding: 0.75rem 1rem;
-    border-radius: 0.5rem;
-    background: #f9fafb;
-    border: 1px solid #e5e7eb;
+    padding: 0.85rem 1rem;
+    border-radius: 0.85rem;
+    background: linear-gradient(90deg, rgba(14, 165, 233, 0.08), rgba(255, 255, 255, 0.95));
+    border: 1px solid var(--border);
+    box-shadow: 0 8px 18px rgba(15, 23, 42, 0.08);
 }
 
 .top-bar-user {
     font-size: 0.9rem;
-    color: #4b5563;
+    color: var(--muted);
 }
 
 .top-bar-user strong {
     font-weight: 600;
+    color: var(--text);
 }
 
 .top-bar-actions {
@@ -111,16 +159,30 @@ body {
 .table-bookings th,
 .table-bookings td {
     vertical-align: middle;
+    border-color: #e5eaf6;
+}
+
+.table-bookings th {
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    font-weight: 700;
+    font-size: 0.78rem;
+}
+
+.table-bookings tr:hover td {
+    background: rgba(14, 165, 233, 0.04);
 }
 
 .badge-summary {
     display: inline-block;
     padding: 0.25rem 0.75rem;
     border-radius: 999px;
-    background: #eff6ff;
-    color: #1d4ed8;
-    font-size: 0.8rem;
-    font-weight: 500;
+    background: rgba(37, 99, 235, 0.12);
+    color: var(--text);
+    font-size: 0.82rem;
+    font-weight: 600;
+    border: 1px solid rgba(37, 99, 235, 0.22);
 }
 
 /* Preserve newlines in error messages on login */
@@ -133,11 +195,13 @@ body {
 -------------------------------------------------- */
 
 .model-card {
-    border: 1px solid #e5e7eb;
-    border-radius: 0.75rem;
+    border: 1px solid var(--border);
+    border-radius: 0.9rem;
     overflow: hidden;
     display: flex;
     flex-direction: column;
+    box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
+    background: linear-gradient(135deg, #ffffff, #f7fbff);
 }
 
 /* Consistent, non-cropping image area for catalogue cards */
@@ -147,7 +211,7 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    background: #f8f9fa;
+    background: linear-gradient(135deg, rgba(14, 165, 233, 0.08), rgba(255, 255, 255, 0.95));
     padding: 8px;
     border-bottom: 1px solid rgba(0,0,0,0.05);
 }
@@ -173,14 +237,17 @@ body {
 -------------------------------------------------- */
 
 form .form-label {
-    font-size: 0.85rem;
-    color: #4b5563;
+    font-size: 0.86rem;
+    color: var(--muted);
 }
 
 /* Slightly smaller inputs on catalogue filters */
 form .form-control,
 form .form-select {
     font-size: 0.9rem;
+    border-radius: 0.6rem;
+    border-color: var(--border);
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
 }
 
 /* --------------------------------------------------
@@ -189,11 +256,14 @@ form .form-select {
 
 .btn-outline-primary {
     border-radius: 999px;
+    color: var(--accent);
+    border-color: rgba(37, 99, 235, 0.45);
 }
 
 .btn-primary,
 .btn-success {
-    border-radius: 0.5rem;
+    border-radius: 0.6rem;
+    box-shadow: 0 10px 20px rgba(37, 99, 235, 0.18);
 }
 
 /* Optional: subtle hover effect */
@@ -210,6 +280,46 @@ form .form-select {
 
 .pagination .page-link {
     font-size: 0.9rem;
+}
+
+/* --------------------------------------------------
+   Cards
+-------------------------------------------------- */
+
+.card {
+    border-radius: 1rem;
+    border: 1px solid var(--border);
+    box-shadow: 0 12px 28px rgba(15, 23, 42, 0.08);
+    background: linear-gradient(160deg, #ffffff 0%, #f5faff 100%);
+}
+
+.card .card-title {
+    font-weight: 700;
+    color: var(--text);
+}
+
+.card .card-text {
+    color: var(--muted);
+}
+
+.alert-secondary {
+    background: linear-gradient(120deg, rgba(37, 99, 235, 0.08), rgba(14, 165, 233, 0.08));
+    border: 1px solid var(--border);
+    color: var(--text);
+}
+
+.btn-primary {
+    background: linear-gradient(120deg, var(--accent), var(--accent-2));
+    border: 1px solid rgba(37, 99, 235, 0.5);
+}
+
+.btn-primary:focus {
+    box-shadow: 0 0 0 0.25rem rgba(37, 99, 235, 0.25);
+}
+
+.btn-success {
+    background: linear-gradient(120deg, #22c55e, #16a34a);
+    border: 1px solid rgba(34, 197, 94, 0.5);
 }
 
 /* --------------------------------------------------
