@@ -5,13 +5,17 @@ session_start();
 require_once __DIR__ . '/db.php';
 $config   = require __DIR__ . '/config.php';
 
-$ldapCfg  = $config['ldap'];
-$authCfg  = $config['auth'];
-$appCfg   = $config['app'] ?? [];
-$debugOn  = !empty($appCfg['debug']);
+$ldapCfg   = $config['ldap'];
+$authCfg   = $config['auth'];
+$appCfg    = $config['app'] ?? [];
+$debugOn   = !empty($appCfg['debug']);
 
-// Staff group CN from config only
-$staffCn  = $authCfg['staff_group_cn'] ?? '';
+// Staff group CN(s) from config (string or array)
+$staffCns = $authCfg['staff_group_cn'] ?? '';
+if (!is_array($staffCns)) {
+    $staffCns = $staffCns !== '' ? [$staffCns] : [];
+}
+$staffCns = array_values(array_filter(array_map('trim', $staffCns), 'strlen'));
 
 /**
  * Polyfill ldap_escape (older PHP builds)
@@ -165,11 +169,13 @@ if ($fullName === '') {
 // Staff check (LDAP group via config)
 // ------------------------------------------------------------------
 $isStaff = false;
-if ($staffCn !== '' && !empty($user['memberof']) && is_array($user['memberof'])) {
+if ($staffCns && !empty($user['memberof']) && is_array($user['memberof'])) {
     for ($i = 0; $i < ($user['memberof']['count'] ?? 0); $i++) {
-        if (stripos($user['memberof'][$i], 'CN=' . $staffCn . ',') !== false) {
-            $isStaff = true;
-            break;
+        foreach ($staffCns as $cn) {
+            if (stripos($user['memberof'][$i], 'CN=' . $cn . ',') !== false) {
+                $isStaff = true;
+                break 2;
+            }
         }
     }
 }

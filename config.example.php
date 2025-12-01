@@ -56,7 +56,11 @@ return [
     ],
 
     'auth' => [
-        'staff_group_cn' => '',
+        // Accepts a single CN string or an array of CNs
+        'staff_group_cn' => [
+            // 'ICT Staff',
+            // 'Another Staff Group',
+        ],
     ],
 
     'app' => [
