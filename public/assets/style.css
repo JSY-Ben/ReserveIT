@@ -80,6 +80,10 @@ body {
    App navigation
 -------------------------------------------------- */
 
+.app-nav-shell {
+    margin-bottom: 1rem;
+}
+
 .app-nav {
     display: flex;
     flex-wrap: wrap;
@@ -91,6 +95,10 @@ body {
     border: 1px solid var(--border);
     border-radius: 999px;
     box-shadow: 0 10px 25px rgba(var(--primary-rgb), 0.12);
+}
+
+.app-nav-shell .app-nav {
+    margin-bottom: 0;
 }
 
 .app-nav-link {
@@ -117,6 +125,63 @@ body {
     border-color: rgba(var(--primary-rgb), 0.4);
     color: #ffffff;
     box-shadow: 0 10px 20px rgba(var(--primary-rgb), 0.25);
+}
+
+.app-nav-toggle {
+    display: none;
+    width: 100%;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.75rem 0.9rem;
+    border-radius: 0.9rem;
+    background: #ffffff;
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-weight: 700;
+    box-shadow: 0 10px 25px rgba(var(--primary-rgb), 0.12);
+}
+
+.app-nav-toggle:hover {
+    background: rgba(var(--primary-rgb), 0.06);
+    color: var(--accent);
+}
+
+.app-nav-toggle-icon {
+    position: relative;
+    width: 22px;
+    height: 14px;
+    display: inline-block;
+}
+
+.app-nav-toggle-icon::before,
+.app-nav-toggle-icon::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 2px;
+    border-radius: 2px;
+    background: currentColor;
+    transition: transform 0.2s ease;
+}
+
+.app-nav-toggle-icon::before {
+    top: 0;
+    box-shadow: 0 6px 0 0 currentColor;
+}
+
+.app-nav-toggle-icon::after {
+    bottom: 0;
+}
+
+.app-nav-shell.is-open .app-nav-toggle-icon::before {
+    transform: translateY(6px) rotate(45deg);
+    box-shadow: none;
+}
+
+.app-nav-shell.is-open .app-nav-toggle-icon::after {
+    transform: translateY(-6px) rotate(-45deg);
 }
 
 .clamp-3 {
@@ -347,6 +412,37 @@ form .form-select {
 /* --------------------------------------------------
    Responsive tweaks
 -------------------------------------------------- */
+
+@media (max-width: 768px) {
+    .app-nav-shell.has-toggle {
+        display: flex;
+        flex-direction: column;
+        gap: 0.6rem;
+    }
+
+    .app-nav-shell.has-toggle .app-nav-toggle {
+        display: inline-flex;
+    }
+
+    .app-nav-shell.has-toggle .app-nav {
+        display: none;
+        width: 100%;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.4rem;
+        padding: 0.75rem;
+        border-radius: 1rem;
+    }
+
+    .app-nav-shell.has-toggle.is-open .app-nav {
+        display: flex;
+    }
+
+    .app-nav-link {
+        width: 100%;
+        text-align: center;
+    }
+}
 
 @media (max-width: 576px) {
     .page-shell {

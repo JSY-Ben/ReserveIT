@@ -137,6 +137,7 @@ if (!function_exists('reserveit_footer')) {
         $version     = $versionRaw !== '' ? $versionRaw : 'dev';
         $versionEsc  = htmlspecialchars($version, ENT_QUOTES, 'UTF-8');
 
+        echo '<script src="assets/nav.js"></script>';
         echo '<footer class="text-center text-muted mt-4 small">'
             . 'ReserveIT Version ' . $versionEsc . ' - Created by '
             . '<a href="https://www.linkedin.com/in/ben-pirozzolo-76212a88" target="_blank" rel="noopener noreferrer">Ben Pirozzolo</a>'
