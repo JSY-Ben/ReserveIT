@@ -3,6 +3,8 @@
  * Global configuration for the Snipe-IT booking app.
  *
  * Edit the values below to match your environment.
+ *
+ * Copy this file to config/config.php and keep your secrets out of version control.
  */
 
 /**
@@ -56,13 +58,18 @@ return [
     ],
 
     'auth' => [
-        'staff_group_cn' => '',
+        // Accepts a single CN string or an array of CNs
+        'staff_group_cn' => [
+            // 'ICT Staff',
+            // 'Another Staff Group',
+        ],
     ],
 
     'app' => [
         'timezone' => 'Europe/Jersey',
         'debug'    => true,
         'logo_url' => '', // optional: full URL or relative path to logo image
+        'primary_color' => '#660000', // main UI colour for gradients/buttons
         'missed_cutoff_minutes' => 60, // minutes after start time before marking reservation as missed
     ],
 ];

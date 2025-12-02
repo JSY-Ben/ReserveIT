@@ -10,7 +10,9 @@
 //   - get_model($id)
 //   - get_model_hardware_count($modelId)
 
-$config       = require __DIR__ . '/config.php';
+require_once __DIR__ . '/bootstrap.php';
+
+$config       = load_config();
 $snipeConfig  = $config['snipeit'] ?? [];
 
 $snipeBaseUrl   = rtrim($snipeConfig['base_url'] ?? '', '/');

@@ -1,6 +1,5 @@
 <?php
-
-require_once __DIR__ . '/config.php';
+require_once __DIR__ . '/bootstrap.php';
 
 // auth.php
 // Simple authentication guard used by all protected pages.

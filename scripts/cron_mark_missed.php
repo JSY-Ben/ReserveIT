@@ -3,10 +3,12 @@
 // Mark reservations as "missed" if they were not checked out within a cutoff window.
 //
 // Run via cron, e.g.:
-//   */10 * * * * /usr/bin/php /path/to/cron_mark_missed.php >> /var/log/reserveit_missed.log 2>&1
+//   */10 * * * * /usr/bin/php /path/to/scripts/cron_mark_missed.php >> /var/log/reserveit_missed.log 2>&1
 
-require_once __DIR__ . '/db.php';
-$config = require __DIR__ . '/config.php';
+require_once __DIR__ . '/../src/bootstrap.php';
+require_once SRC_PATH . '/db.php';
+
+$config = load_config();
 
 $appCfg         = $config['app'] ?? [];
 $cutoffMinutes  = isset($appCfg['missed_cutoff_minutes']) ? (int)$appCfg['missed_cutoff_minutes'] : 60;

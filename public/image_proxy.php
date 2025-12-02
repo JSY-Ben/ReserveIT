@@ -10,7 +10,9 @@
 // It will validate that the final URL points at the configured Snipe-IT host,
 // then fetch the image and stream it back.
 
-$config   = require __DIR__ . '/config.php';
+require_once __DIR__ . '/../src/bootstrap.php';
+
+$config   = load_config();
 $snipeCfg = $config['snipeit'] ?? [];
 
 $baseUrl   = rtrim($snipeCfg['base_url'] ?? '', '/');

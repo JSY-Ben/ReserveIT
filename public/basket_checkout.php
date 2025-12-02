@@ -1,8 +1,9 @@
 <?php
-require 'auth.php';
-require 'db.php';
-require 'snipeit_client.php';
-require_once __DIR__ . '/footer.php';
+require_once __DIR__ . '/../src/bootstrap.php';
+require_once SRC_PATH . '/auth.php';
+require_once SRC_PATH . '/db.php';
+require_once SRC_PATH . '/snipeit_client.php';
+require_once SRC_PATH . '/footer.php';
 
 $userOverride = $_SESSION['booking_user_override'] ?? null;
 $user   = $userOverride ?: $currentUser;

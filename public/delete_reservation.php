@@ -2,8 +2,9 @@
 // delete_reservation.php
 // Deletes a reservation and its items (admin only).
 
-require_once __DIR__ . '/auth.php';
-require_once __DIR__ . '/db.php';
+require_once __DIR__ . '/../src/bootstrap.php';
+require_once SRC_PATH . '/auth.php';
+require_once SRC_PATH . '/db.php';
 
 // Only staff/admin allowed
 if (empty($currentUser['is_admin'])) {

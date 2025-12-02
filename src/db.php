@@ -6,7 +6,9 @@
  * This file no longer connects to the live Snipe-IT database at all.
  */
 
-$config = require __DIR__ . '/config.php';
+require_once __DIR__ . '/bootstrap.php';
+
+$config = load_config();
 
 if (!is_array($config) || empty($config['db_booking'])) {
     throw new RuntimeException('Booking database configuration (db_booking) is missing in config.php');
