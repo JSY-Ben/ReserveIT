@@ -88,6 +88,33 @@ function reserveit_checked_out_url(string $base, array $params): string
     <div class="page-shell">
         <?= reserveit_logo_tag() ?>
 <?php endif; ?>
+        <style>
+            /* Make sub-tabs pop within the reservations area */
+            .reservations-subtabs {
+                border-bottom: 3px solid var(--primary-strong);
+                gap: 0.25rem;
+            }
+            .reservations-subtabs .nav-link {
+                border: 1px solid transparent;
+                color: var(--primary-strong);
+                font-weight: 600;
+                padding: 0.8rem 1.1rem;
+                border-radius: 0.5rem 0.5rem 0 0;
+                background: linear-gradient(180deg, rgba(var(--primary-soft-rgb),0.18), rgba(255,255,255,0));
+                transition: all 120ms ease;
+            }
+            .reservations-subtabs .nav-link:hover {
+                color: var(--primary);
+                background: linear-gradient(180deg, rgba(var(--primary-soft-rgb),0.36), rgba(255,255,255,0.08));
+                border-color: rgba(var(--primary-rgb),0.25);
+            }
+            .reservations-subtabs .nav-link.active {
+                color: #fff;
+                background: linear-gradient(135deg, var(--primary), var(--primary-strong));
+                border-color: var(--primary-strong) var(--primary-strong) #fff;
+                box-shadow: 0 8px 18px rgba(var(--primary-rgb), 0.2);
+            }
+        </style>
         <div class="page-header">
             <h1>Checked Out Reservations</h1>
             <div class="page-subtitle">
@@ -111,7 +138,7 @@ function reserveit_checked_out_url(string $base, array $params): string
             $overdueUrl = reserveit_checked_out_url($pageBase, $overdueParams);
         ?>
 
-        <ul class="nav nav-tabs mb-3">
+        <ul class="nav nav-tabs reservations-subtabs mb-3">
             <li class="nav-item">
                 <a class="nav-link <?= $view === 'all' ? 'active' : '' ?>"
                    href="<?= h($allUrl) ?>">All checked out</a>
