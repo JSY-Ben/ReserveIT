@@ -317,12 +317,17 @@ $allowedCategoryIds = array_map('intval', $allowedCategoryIds);
                 <div class="card">
                     <div class="card-body">
                         <h5 class="card-title mb-1">Catalogue display</h5>
-                        <p class="text-muted small mb-3">Control how many items appear per page in the catalogue.</p>
+                        <p class="text-muted small mb-3">Control how many items appear per page in the catalogue and how long to cache API responses.</p>
                         <div class="row g-3">
                             <div class="col-md-4">
                                 <label class="form-label">Items per page</label>
                                 <input type="number" name="catalogue_items_per_page" min="1" class="form-control" value="<?= (int)$definedValues['CATALOGUE_ITEMS_PER_PAGE'] ?>">
                                 <div class="form-text">Adjust to show more or fewer items on each catalogue page.</div>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">API cache TTL (seconds)</label>
+                                <input type="number" name="app_api_cache_ttl" class="form-control" min="0" value="<?= (int)$cfg(['app', 'api_cache_ttl_seconds'], 60) ?>">
+                                <div class="form-text">Cache Snipe-IT GET responses. Set 0 to disable.</div>
                             </div>
                         </div>
                     </div>
@@ -394,12 +399,7 @@ $allowedCategoryIds = array_map('intval', $allowedCategoryIds);
                                 <label class="form-label">Logo URL</label>
                                 <input type="text" name="app_logo_url" class="form-control" value="<?= h($cfg(['app', 'logo_url'], '')) ?>">
                             </div>
-                            <div class="col-md-3">
-                                <label class="form-label">API cache TTL (seconds)</label>
-                                <input type="number" name="app_api_cache_ttl" class="form-control" min="0" value="<?= (int)$cfg(['app', 'api_cache_ttl_seconds'], 60) ?>">
-                                <div class="form-text">Cache Snipe-IT GET responses. Set 0 to disable.</div>
-                            </div>
-                            <div class="col-md-3 d-flex align-items-end">
+                            <div class="col-md-6 d-flex align-items-end">
                                 <div class="form-check">
                                     <input class="form-check-input" type="checkbox" name="app_debug" id="app_debug" <?= $cfg(['app', 'debug'], false) ? 'checked' : '' ?>>
                                     <label class="form-check-label" for="app_debug">Enable debug mode (more verbose errors)</label>
