@@ -48,9 +48,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         return trim($_POST[$key] ?? $fallback);
     };
 
-    $pageLimit   = max(1, (int)$post('snipeit_api_page_limit', $definedValues['SNIPEIT_API_PAGE_LIMIT']));
+    $pageLimit   = $definedValues['SNIPEIT_API_PAGE_LIMIT'];
     $cataloguePP = max(1, (int)$post('catalogue_items_per_page', $definedValues['CATALOGUE_ITEMS_PER_PAGE']));
-    $maxModels   = max(10, (int)$post('snipeit_max_models_fetch', $definedValues['SNIPEIT_MAX_MODELS_FETCH']));
+    $maxModels   = $definedValues['SNIPEIT_MAX_MODELS_FETCH'];
 
     $db = $config['db_booking'] ?? [];
     $db['host']     = $post('db_host', $db['host'] ?? 'localhost');
@@ -315,23 +315,13 @@ $allowedCategoryIds = array_map('intval', $allowedCategoryIds);
             <div class="col-12">
                 <div class="card">
                     <div class="card-body">
-                        <h5 class="card-title mb-1">Pagination & limits</h5>
-                        <p class="text-muted small mb-3">Controls how many models are fetched and displayed per page to avoid heavy Snipe-IT calls.</p>
+                        <h5 class="card-title mb-1">Catalogue display</h5>
+                        <p class="text-muted small mb-3">Control how many items appear per page in the catalogue.</p>
                         <div class="row g-3">
                             <div class="col-md-4">
-                                <label class="form-label">Snipe-IT API page limit</label>
-                                <input type="number" name="snipeit_api_page_limit" min="1" class="form-control" value="<?= (int)$definedValues['SNIPEIT_API_PAGE_LIMIT'] ?>">
-                                <div class="form-text">How many rows to request per page from Snipe-IT.</div>
-                            </div>
-                            <div class="col-md-4">
-                                <label class="form-label">Catalogue items per page</label>
+                                <label class="form-label">Items per page</label>
                                 <input type="number" name="catalogue_items_per_page" min="1" class="form-control" value="<?= (int)$definedValues['CATALOGUE_ITEMS_PER_PAGE'] ?>">
-                                <div class="form-text">Pagination size for the user-facing catalogue.</div>
-                            </div>
-                            <div class="col-md-4">
-                                <label class="form-label">Snipe-IT max models fetch</label>
-                                <input type="number" name="snipeit_max_models_fetch" min="10" class="form-control" value="<?= (int)$definedValues['SNIPEIT_MAX_MODELS_FETCH'] ?>">
-                                <div class="form-text">Safety cap on total models pulled when sorting before pagination.</div>
+                                <div class="form-text">Adjust to show more or fewer items on each catalogue page.</div>
                             </div>
                         </div>
                     </div>
