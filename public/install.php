@@ -428,7 +428,7 @@ $staffText = implode("\n", $staffPref);
                             </div>
                             <div class="col-md-2">
                                 <label class="form-label">Password</label>
-                                <input type="password" name="db_password" class="form-control" placeholder="Leave blank to keep existing">
+                                <input type="password" name="db_password" class="form-control">
                             </div>
                             <div class="col-md-2">
                                 <label class="form-label">Charset</label>
@@ -462,7 +462,7 @@ $staffText = implode("\n", $staffPref);
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label">API token</label>
-                                <input type="password" name="snipe_api_token" class="form-control" placeholder="Leave blank to keep existing">
+                                <input type="password" name="snipe_api_token" class="form-control">
                             </div>
                             <div class="col-md-4 d-flex align-items-end">
                                 <div class="form-check">
@@ -499,7 +499,7 @@ $staffText = implode("\n", $staffPref);
                             </div>
                             <div class="col-md-4">
                                 <label class="form-label">Bind password</label>
-                                <input type="password" name="ldap_bind_password" class="form-control" placeholder="Leave blank to keep existing">
+                                <input type="password" name="ldap_bind_password" class="form-control">
                             </div>
                             <div class="col-md-4 d-flex align-items-end">
                                 <div class="form-check">
