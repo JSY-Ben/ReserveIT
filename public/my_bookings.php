@@ -110,7 +110,7 @@ try {
                             Reservation #<?= $resId ?>
                         </h5>
                         <p class="card-text">
-                            <strong>Student Name:</strong>
+                            <strong>User Name:</strong>
                             <?= h($res['student_name'] ?? $studentName) ?><br>
 
                             <strong>Start:</strong>

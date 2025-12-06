@@ -184,7 +184,7 @@ if ($staffCns && !empty($user['memberof']) && is_array($user['memberof'])) {
 }
 
 // ------------------------------------------------------------------
-// Upsert into students table (schema: id, student_id, name, email, created_at)
+// Upsert into users table (legacy `students` schema: id, student_id, name, email, created_at)
 // We key users by EMAIL only, and store full name in `name`.
 // `student_id` must be UNIQUE, so we derive a stable numeric ID from email.
 // ------------------------------------------------------------------
@@ -207,8 +207,8 @@ try {
         ]);
         $userId = (int)$existing['id'];
     } else {
-        // Create a stable numeric student_id from the email (for the UNIQUE constraint)
-        // e.g. student_id = crc32(lower(email))
+        // Create a stable numeric user_id from the email (for the UNIQUE constraint)
+        // e.g. user_id = crc32(lower(email))
         $studentId = sprintf('%u', crc32(strtolower($mail)));
 
         $insert = $pdo->prepare("

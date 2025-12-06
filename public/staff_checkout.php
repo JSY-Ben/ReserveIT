@@ -622,7 +622,7 @@ $isStaff = !empty($currentUser['is_admin']);
 
                         <div class="row g-3 mb-3">
                             <div class="col-md-6">
-                                <label class="form-label">Check out to (from reservation)</label>
+                                <label class="form-label">Check out to (reservation user)</label>
                                 <input type="text"
                                        class="form-control"
                                        value="<?= h($selectedReservation['student_name'] ?? '') ?>"

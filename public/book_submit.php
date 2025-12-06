@@ -64,10 +64,10 @@ if ($row && $row['c'] > 0) {
     die('Sorry, this item is already booked for that time.');
 }
 
-// Build student info from Snipe-IT user
+// Build user info from Snipe-IT user record
 $studentName  = trim($user['first_name'] . ' ' . $user['last_name']);
 $studentEmail = $user['email'];
-$studentId    = $user['id']; // store their Snipe-IT ID as "student_id" too if you like
+$studentId    = $user['id']; // store their Snipe-IT ID as "user_id" too if you like
 
 // Insert booking
 $insert = $pdo->prepare("

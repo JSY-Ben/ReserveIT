@@ -34,7 +34,7 @@ if ($end <= $start) {
     die('End time must be after start time.');
 }
 
-// Build student info from Snipe-IT user
+// Build user info from Snipe-IT user record
 $studentName  = trim($user['first_name'] . ' ' . $user['last_name']);
 $studentEmail = $user['email'];
 $studentId    = $user['id']; // Snipe-IT user id

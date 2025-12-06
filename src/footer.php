@@ -131,7 +131,7 @@ CSS;
 
 if (!function_exists('reserveit_render_nav')) {
     /**
-     * Render the main app navigation. Highlights the active page and hides staff-only items for students.
+     * Render the main app navigation. Highlights the active page and hides staff-only items for non-staff users.
      */
     function reserveit_render_nav(string $active, bool $isStaff): string
     {

@@ -110,7 +110,7 @@ try {
         <?= reserveit_logo_tag() ?>
 <?php endif; ?>
         <div class="page-header">
-            <h1>Reservation History</h1>
+        <h1>Reservation History</h1>
             <div class="page-subtitle">
                 View, filter, and delete any past, present or future reservation.
             </div>
@@ -162,7 +162,7 @@ try {
                 <input type="text"
                        name="q"
                        class="form-control"
-                       placeholder="Search by student or items..."
+                       placeholder="Search by user or items..."
                        value="<?= htmlspecialchars($qRaw) ?>">
             </div>
             <div class="col-md-2">
@@ -203,7 +203,7 @@ try {
                     <thead>
                         <tr>
                             <th>ID</th>
-                            <th>Student Name</th>
+                            <th>User Name</th>
                             <th>Items Reserved</th>
                             <th>Start</th>
                             <th>End</th>

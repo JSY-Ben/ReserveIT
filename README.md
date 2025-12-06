@@ -1,10 +1,10 @@
 # ReserveIT
 
-ReserveIT is a lightweight PHP/MySQL web app that layers booking and checkout workflows on top of Snipe-IT. Students can request equipment, and staff can manage reservations, checkouts, and checked-out assets from a unified “Reservations” hub.
+ReserveIT is a lightweight PHP/MySQL web app that layers booking and checkout workflows on top of Snipe-IT. Users can request equipment, and staff can manage reservations, checkouts, and checked-out assets from a unified “Reservations” hub.
 
 ## Features
-- Catalogue and basket flow for students to request equipment.
-- My Reservations view for students.
+- Catalogue and basket flow for users to request equipment.
+- My Reservations view for users.
 - Staff “Reservations” hub with tabs for Today’s Reservations (checkout), Checked Out Reservations, and Reservation History.
 - Quick checkout/checkin flows for ad-hoc asset handling.
 - Snipe-IT integration for model and asset data; optional LDAP/AD for authentication.
@@ -26,7 +26,7 @@ ReserveIT is a lightweight PHP/MySQL web app that layers booking and checkout wo
 5. If you prefer manual configuration, copy `config/config.example.php` to `config/config.php` and update values. Then import `schema.sql` into your database.
 
 ## General usage
-- Students:
+- Users:
   - Browse equipment via `catalogue.php`, add to basket, and submit reservations.
   - View their reservations on `my_bookings.php` (labelled “My Reservations”).
 - Staff:

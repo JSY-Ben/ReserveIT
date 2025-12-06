@@ -11,7 +11,7 @@ SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 SET time_zone = "+00:00";
 
 -- ------------------------------------------------------
--- Students table
+-- Users table (legacy table name: students)
 -- (local representation of authenticated users)
 -- ------------------------------------------------------
 CREATE TABLE IF NOT EXISTS students (
@@ -31,8 +31,8 @@ CREATE TABLE IF NOT EXISTS students (
 -- ------------------------------------------------------
 CREATE TABLE IF NOT EXISTS reservations (
     id INT UNSIGNED NOT NULL AUTO_INCREMENT,
-    student_id VARCHAR(64) NOT NULL,
-    student_name VARCHAR(255) NOT NULL,
+    student_id VARCHAR(64) NOT NULL,   -- legacy column name: user identifier
+    student_name VARCHAR(255) NOT NULL, -- legacy column name: user display name
 
     start_datetime DATETIME NOT NULL,
     end_datetime DATETIME NOT NULL,
