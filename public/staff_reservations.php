@@ -61,8 +61,10 @@ try {
     $where  = [];
     $params = [];
 
+    $resCols = reserveit_reservation_user_fields($pdo);
+
     if ($q !== null) {
-        $where[] = '(student_name LIKE :q OR asset_name_cache LIKE :q)';
+        $where[] = '(' . $resCols['name'] . ' LIKE :q OR asset_name_cache LIKE :q)';
         $params[':q'] = '%' . $q . '%';
     }
 
@@ -223,7 +225,7 @@ try {
                             ?>
                             <tr>
                                 <td>#<?= (int)$r['id'] ?></td>
-                                <td><?= h($r['student_name'] ?? '(Unknown)') ?></td>
+                                <td><?= h($r[$resCols['name']] ?? '(Unknown)') ?></td>
                                 <td><?= h($itemsText) ?></td>
                                 <td><?= uk_datetime($r['start_datetime'] ?? '') ?></td>
                                 <td><?= uk_datetime($r['end_datetime'] ?? '') ?></td>

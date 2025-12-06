@@ -11,11 +11,13 @@ if (!$reservationId || $email === '') {
 }
 
 // Load reservation
+$resCols = reserveit_reservation_user_fields($pdo);
+$emailCol = $resCols['email'];
 $sql = "
     SELECT *
     FROM reservations
     WHERE id = :id
-      AND student_email = :email
+      AND {$emailCol} = :email
       AND status IN ('pending','confirmed')
     LIMIT 1
 ";

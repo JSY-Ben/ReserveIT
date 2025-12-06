@@ -33,17 +33,18 @@ $active  = basename($_SERVER['PHP_SELF']);
 $isStaff = !empty($currentUser['is_admin']);
 
 $studentName = trim(($currentUser['first_name'] ?? '') . ' ' . ($currentUser['last_name'] ?? ''));
+$resUserCols = reserveit_reservation_user_fields($pdo);
 
 // Load this user's reservations
 try {
     $sql = "
         SELECT *
         FROM reservations
-        WHERE student_name = :student_name
+        WHERE {$resUserCols['name']} = :user_name
         ORDER BY start_datetime DESC
     ";
     $stmt = $pdo->prepare($sql);
-    $stmt->execute([':student_name' => $studentName]);
+    $stmt->execute([':user_name' => $studentName]);
     $reservations = $stmt->fetchAll(PDO::FETCH_ASSOC);
 } catch (Exception $e) {
     $reservations = [];
@@ -111,7 +112,7 @@ try {
                         </h5>
                         <p class="card-text">
                             <strong>User Name:</strong>
-                            <?= h($res['student_name'] ?? $studentName) ?><br>
+                            <?= h($res[$resUserCols['name']] ?? $studentName) ?><br>
 
                             <strong>Start:</strong>
                             <?= uk_datetime($res['start_datetime'] ?? '') ?><br>

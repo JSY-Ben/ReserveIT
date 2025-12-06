@@ -184,20 +184,23 @@ if ($staffCns && !empty($user['memberof']) && is_array($user['memberof'])) {
 }
 
 // ------------------------------------------------------------------
-// Upsert into users table (legacy `students` schema: id, student_id, name, email, created_at)
+// Upsert into users table (legacy table name `students`: id, user_id, name, email, created_at)
 // We key users by EMAIL only, and store full name in `name`.
-// `student_id` must be UNIQUE, so we derive a stable numeric ID from email.
+// `user_id` must be UNIQUE, so we derive a stable numeric ID from email.
 // ------------------------------------------------------------------
 try {
+    $userTable = reserveit_users_table_name($pdo);
+    $userIdCol = reserveit_column_exists($pdo, $userTable, 'user_id') ? 'user_id' : 'student_id';
+
     // Look up existing record by email
-    $stmt = $pdo->prepare('SELECT * FROM students WHERE email = :email LIMIT 1');
+    $stmt = $pdo->prepare("SELECT * FROM {$userTable} WHERE email = :email LIMIT 1");
     $stmt->execute([':email' => $mail]);
     $existing = $stmt->fetch(PDO::FETCH_ASSOC);
 
     if ($existing) {
         // Update `name` only (email is the key)
         $update = $pdo->prepare("
-            UPDATE students
+            UPDATE {$userTable}
                SET name = :name
              WHERE id = :id
         ");
@@ -209,14 +212,14 @@ try {
     } else {
         // Create a stable numeric user_id from the email (for the UNIQUE constraint)
         // e.g. user_id = crc32(lower(email))
-        $studentId = sprintf('%u', crc32(strtolower($mail)));
+        $userIdHex = sprintf('%u', crc32(strtolower($mail)));
 
         $insert = $pdo->prepare("
-            INSERT INTO students (student_id, name, email, created_at)
-            VALUES (:student_id, :name, :email, NOW())
+            INSERT INTO {$userTable} ({$userIdCol}, name, email, created_at)
+            VALUES (:user_id, :name, :email, NOW())
         ");
         $insert->execute([
-            ':student_id' => $studentId,
+            ':user_id' => $userIdHex,
             ':name'       => $fullName,
             ':email'      => $mail,
         ]);

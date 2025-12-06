@@ -70,21 +70,22 @@ $studentEmail = $user['email'];
 $studentId    = $user['id']; // store their Snipe-IT ID as "user_id" too if you like
 
 // Insert booking
+$userCols = reserveit_reservation_user_fields($pdo);
 $insert = $pdo->prepare("
     INSERT INTO reservations (
-        student_name, student_email, student_id, snipeit_user_id,
+        {$userCols['name']}, {$userCols['email']}, {$userCols['id']}, snipeit_user_id,
         asset_id, asset_name_cache,
         start_datetime, end_datetime, status
     ) VALUES (
-        :student_name, :student_email, :student_id, :snipeit_user_id,
+        :user_name, :user_email, :user_id, :snipeit_user_id,
         :asset_id, :asset_name_cache,
         :start_datetime, :end_datetime, 'pending'
     )
 ");
 $insert->execute([
-    ':student_name'     => $studentName,
-    ':student_email'    => $studentEmail,
-    ':student_id'       => $studentId,
+    ':user_name'        => $studentName,
+    ':user_email'       => $studentEmail,
+    ':user_id'          => $studentId,
     ':snipeit_user_id'  => $user['id'],
     ':asset_id'         => $assetId,
     ':asset_name_cache' => 'Pending checkout',

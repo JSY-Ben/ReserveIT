@@ -110,7 +110,8 @@ $isStaff = !empty($currentUser['is_admin']);
                 <h5 class="card-title">Booking information</h5>
                 <p class="card-text">
                     <strong>User Name:</strong>
-                    <?= h($reservation['student_name'] ?? '(Unknown)') ?><br>
+                    <?php $resCols = reserveit_reservation_user_fields($pdo); ?>
+                    <?= h($reservation[$resCols['name']] ?? '(Unknown)') ?><br>
 
                     <strong>Start:</strong>
                     <?= uk_datetime($reservation['start_datetime'] ?? '') ?><br>

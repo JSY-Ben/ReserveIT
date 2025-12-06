@@ -106,21 +106,22 @@ try {
         $label .= ' +' . ($totalRequestedItems - 1) . ' more item(s)';
     }
 
+    $userCols = reserveit_reservation_user_fields($pdo);
     $insertRes = $pdo->prepare("
         INSERT INTO reservations (
-            student_name, student_email, student_id, snipeit_user_id,
+            {$userCols['name']}, {$userCols['email']}, {$userCols['id']}, snipeit_user_id,
             asset_id, asset_name_cache,
             start_datetime, end_datetime, status
         ) VALUES (
-            :student_name, :student_email, :student_id, :snipeit_user_id,
+            :user_name, :user_email, :user_id, :snipeit_user_id,
             0, :asset_name_cache,
             :start_datetime, :end_datetime, 'pending'
         )
     ");
     $insertRes->execute([
-        ':student_name'     => $studentName,
-        ':student_email'    => $studentEmail,
-        ':student_id'       => $studentId,
+        ':user_name'        => $studentName,
+        ':user_email'       => $studentEmail,
+        ':user_id'          => $studentId,
         ':snipeit_user_id'  => $user['id'],
         ':asset_name_cache' => 'Pending checkout',
         ':start_datetime'   => $start,
