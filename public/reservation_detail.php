@@ -109,8 +109,8 @@ $isStaff = !empty($currentUser['is_admin']);
             <div class="card-body">
                 <h5 class="card-title">Booking information</h5>
                 <p class="card-text">
-                    <strong>Student Name:</strong>
-                    <?= h($reservation['student_name'] ?? '(Unknown)') ?><br>
+                    <strong>User Name:</strong>
+                    <?= h($reservation['user_name'] ?? '(Unknown)') ?><br>
 
                     <strong>Start:</strong>
                     <?= uk_datetime($reservation['start_datetime'] ?? '') ?><br>

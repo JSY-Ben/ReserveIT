@@ -50,7 +50,7 @@ $isStaff = !empty($currentUser['is_admin']);
                     <div class="card-body d-flex flex-column">
                         <h5 class="card-title">Browse equipment</h5>
                         <p class="card-text">
-                            View the catalogue of equipment models available for students to book.
+                            View the catalogue of equipment models available for users to book.
                             Add items to your basket and request them for specific dates.
                         </p>
                         <a href="catalogue.php" class="btn btn-primary mt-auto">

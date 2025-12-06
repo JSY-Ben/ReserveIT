@@ -11,19 +11,19 @@ SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 SET time_zone = "+00:00";
 
 -- ------------------------------------------------------
--- Students table
+-- Users table
 -- (local representation of authenticated users)
 -- ------------------------------------------------------
-CREATE TABLE IF NOT EXISTS students (
+CREATE TABLE IF NOT EXISTS users (
     id INT UNSIGNED NOT NULL AUTO_INCREMENT,
-    student_id VARCHAR(64) NOT NULL,
+    user_id VARCHAR(64) NOT NULL,
     name VARCHAR(255) NOT NULL,
     email VARCHAR(255) NOT NULL,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     PRIMARY KEY (id),
-    UNIQUE KEY uq_students_student_id (student_id),
-    UNIQUE KEY uq_students_email (email)
+    UNIQUE KEY uq_users_user_id (user_id),
+    UNIQUE KEY uq_users_email (email)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ------------------------------------------------------
@@ -31,8 +31,9 @@ CREATE TABLE IF NOT EXISTS students (
 -- ------------------------------------------------------
 CREATE TABLE IF NOT EXISTS reservations (
     id INT UNSIGNED NOT NULL AUTO_INCREMENT,
-    student_id VARCHAR(64) NOT NULL,
-    student_name VARCHAR(255) NOT NULL,
+    user_id VARCHAR(64) NOT NULL,    -- user identifier
+    user_name VARCHAR(255) NOT NULL, -- user display name
+    user_email VARCHAR(255) NOT NULL,
 
     start_datetime DATETIME NOT NULL,
     end_datetime DATETIME NOT NULL,
@@ -45,7 +46,7 @@ CREATE TABLE IF NOT EXISTS reservations (
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     PRIMARY KEY (id),
-    KEY idx_reservations_student_id (student_id),
+    KEY idx_reservations_user_id (user_id),
     KEY idx_reservations_dates (start_datetime, end_datetime),
     KEY idx_reservations_status (status)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

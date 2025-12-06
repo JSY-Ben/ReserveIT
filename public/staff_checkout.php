@@ -13,14 +13,14 @@ require_once SRC_PATH . '/booking_helpers.php';
 require_once SRC_PATH . '/snipeit_client.php';
 require_once SRC_PATH . '/footer.php';
 
-$config   = load_config();
-$timezone = $config['app']['timezone'] ?? 'Europe/Jersey';
-$embedded = defined('RESERVATIONS_EMBED');
-$pageBase = $embedded ? 'reservations.php' : 'staff_checkout.php';
-$baseQuery = $embedded ? ['tab' => 'today'] : [];
-$selfUrl  = $pageBase . (!empty($baseQuery) ? '?' . http_build_query($baseQuery) : '');
-$active   = basename($_SERVER['PHP_SELF']);
-$isStaff  = !empty($currentUser['is_admin']);
+$config     = load_config();
+$timezone   = $config['app']['timezone'] ?? 'Europe/Jersey';
+$embedded   = defined('RESERVATIONS_EMBED');
+$pageBase   = $embedded ? 'reservations.php' : 'staff_checkout.php';
+$baseQuery  = $embedded ? ['tab' => 'today'] : [];
+$selfUrl    = $pageBase . (!empty($baseQuery) ? '?' . http_build_query($baseQuery) : '');
+$active     = basename($_SERVER['PHP_SELF']);
+$isStaff    = !empty($currentUser['is_admin']);
 $tz       = new DateTimeZone($timezone);
 $now      = new DateTime('now', $tz);
 $todayStr = $now->format('Y-m-d');
@@ -335,7 +335,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (!$selectedReservation) {
             $checkoutErrors[] = 'Please select a reservation for today before checking out.';
         } else {
-            $checkoutTo = trim($selectedReservation['student_name'] ?? '');
+$checkoutTo = trim($selectedReservation['user_name'] ?? '');
             $note       = trim($_POST['reservation_note'] ?? '');
             if ($checkoutTo === '') {
                 $checkoutErrors[] = 'This reservation has no associated user name.';
@@ -552,14 +552,14 @@ $isStaff = !empty($currentUser['is_admin']);
                             <option value="0">-- No reservation selected --</option>
                             <?php foreach ($todayBookings as $res): ?>
                                 <?php
-                                $resId   = (int)$res['id'];
-                                $items   = get_reservation_items_with_names($pdo, $resId);
-                                $summary = build_items_summary_text($items);
-                                $start   = uk_datetime_display($res['start_datetime'] ?? '');
-                                $end     = uk_datetime_display($res['end_datetime'] ?? '');
+                        $resId   = (int)$res['id'];
+                        $items   = get_reservation_items_with_names($pdo, $resId);
+                        $summary = build_items_summary_text($items);
+                        $start   = uk_datetime_display($res['start_datetime'] ?? '');
+                        $end     = uk_datetime_display($res['end_datetime'] ?? '');
                                 ?>
                                 <option value="<?= $resId ?>" <?= $resId === $selectedReservationId ? 'selected' : '' ?>>
-                                    #<?= $resId ?> – <?= h($res['student_name'] ?? '') ?> (<?= h($start) ?> → <?= h($end) ?>): <?= h($summary) ?>
+                                    #<?= $resId ?> – <?= h($res['user_name'] ?? '') ?> (<?= h($start) ?> → <?= h($end) ?>): <?= h($summary) ?>
                                 </option>
                             <?php endforeach; ?>
                         </select>
@@ -572,7 +572,7 @@ $isStaff = !empty($currentUser['is_admin']);
 
                 <?php if ($selectedReservation): ?>
                     <div class="mt-3 alert alert-info mb-0">
-                        <div><strong>Selected:</strong> #<?= (int)$selectedReservation['id'] ?> – <?= h($selectedReservation['student_name'] ?? '') ?></div>
+                        <div><strong>Selected:</strong> #<?= (int)$selectedReservation['id'] ?> – <?= h($selectedReservation['user_name'] ?? '') ?></div>
                         <div>When: <?= h(uk_datetime_display($selectedReservation['start_datetime'] ?? '')) ?> → <?= h(uk_datetime_display($selectedReservation['end_datetime'] ?? '')) ?></div>
                         <?php if (!empty($selectedItems)): ?>
                             <div>Models &amp; quantities: <?= h(build_items_summary_text($selectedItems)) ?></div>
@@ -622,10 +622,10 @@ $isStaff = !empty($currentUser['is_admin']);
 
                         <div class="row g-3 mb-3">
                             <div class="col-md-6">
-                                <label class="form-label">Check out to (from reservation)</label>
+                                <label class="form-label">Check out to (reservation user)</label>
                                 <input type="text"
                                        class="form-control"
-                                       value="<?= h($selectedReservation['student_name'] ?? '') ?>"
+                                       value="<?= h($selectedReservation['user_name'] ?? '') ?>"
                                        readonly>
                             </div>
                             <div class="col-md-6">

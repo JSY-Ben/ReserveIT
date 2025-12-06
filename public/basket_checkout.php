@@ -34,10 +34,10 @@ if ($end <= $start) {
     die('End time must be after start time.');
 }
 
-// Build student info from Snipe-IT user
-$studentName  = trim($user['first_name'] . ' ' . $user['last_name']);
-$studentEmail = $user['email'];
-$studentId    = $user['id']; // Snipe-IT user id
+// Build user info from Snipe-IT user record
+$userName  = trim($user['first_name'] . ' ' . $user['last_name']);
+$userEmail = $user['email'];
+$userId    = $user['id']; // Snipe-IT user id
 
 $pdo->beginTransaction();
 
@@ -108,19 +108,19 @@ try {
 
     $insertRes = $pdo->prepare("
         INSERT INTO reservations (
-            student_name, student_email, student_id, snipeit_user_id,
+            user_name, user_email, user_id, snipeit_user_id,
             asset_id, asset_name_cache,
             start_datetime, end_datetime, status
         ) VALUES (
-            :student_name, :student_email, :student_id, :snipeit_user_id,
+            :user_name, :user_email, :user_id, :snipeit_user_id,
             0, :asset_name_cache,
             :start_datetime, :end_datetime, 'pending'
         )
     ");
     $insertRes->execute([
-        ':student_name'     => $studentName,
-        ':student_email'    => $studentEmail,
-        ':student_id'       => $studentId,
+        ':user_name'        => $userName,
+        ':user_email'       => $userEmail,
+        ':user_id'          => $userId,
         ':snipeit_user_id'  => $user['id'],
         ':asset_name_cache' => 'Pending checkout',
         ':start_datetime'   => $start,

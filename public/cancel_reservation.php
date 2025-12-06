@@ -15,7 +15,7 @@ $sql = "
     SELECT *
     FROM reservations
     WHERE id = :id
-      AND student_email = :email
+      AND user_email = :email
       AND status IN ('pending','confirmed')
     LIMIT 1
 ";

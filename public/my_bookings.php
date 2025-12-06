@@ -32,18 +32,18 @@ function uk_datetime(?string $isoDatetime): string
 $active  = basename($_SERVER['PHP_SELF']);
 $isStaff = !empty($currentUser['is_admin']);
 
-$studentName = trim(($currentUser['first_name'] ?? '') . ' ' . ($currentUser['last_name'] ?? ''));
+$userName = trim(($currentUser['first_name'] ?? '') . ' ' . ($currentUser['last_name'] ?? ''));
 
 // Load this user's reservations
 try {
     $sql = "
         SELECT *
         FROM reservations
-        WHERE student_name = :student_name
+        WHERE user_name = :user_name
         ORDER BY start_datetime DESC
     ";
     $stmt = $pdo->prepare($sql);
-    $stmt->execute([':student_name' => $studentName]);
+    $stmt->execute([':user_name' => $userName]);
     $reservations = $stmt->fetchAll(PDO::FETCH_ASSOC);
 } catch (Exception $e) {
     $reservations = [];
@@ -79,7 +79,7 @@ try {
         <div class="top-bar mb-3">
             <div class="top-bar-user">
                 Logged in as:
-                <strong><?= h($studentName) ?></strong>
+                <strong><?= h($userName) ?></strong>
                 (<?= h($currentUser['email'] ?? '') ?>)
             </div>
             <div class="top-bar-actions">
@@ -110,8 +110,8 @@ try {
                             Reservation #<?= $resId ?>
                         </h5>
                         <p class="card-text">
-                            <strong>Student Name:</strong>
-                            <?= h($res['student_name'] ?? $studentName) ?><br>
+                            <strong>User Name:</strong>
+                            <?= h($res['user_name'] ?? $userName) ?><br>
 
                             <strong>Start:</strong>
                             <?= uk_datetime($res['start_datetime'] ?? '') ?><br>
