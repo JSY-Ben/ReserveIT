@@ -56,18 +56,138 @@ $definedValues = [
     'SNIPEIT_MAX_MODELS_FETCH' => defined('SNIPEIT_MAX_MODELS_FETCH') ? SNIPEIT_MAX_MODELS_FETCH : 1000,
 ];
 
+$isAjax = strtolower($_SERVER['HTTP_X_REQUESTED_WITH'] ?? '') === 'xmlhttprequest'
+    || (isset($_POST['ajax']) && $_POST['ajax'] == '1');
 $messages = [];
 $errors   = [];
 $installLocked = is_file($installedFlag);
 $installCompleted = false;
 $redirectTo = null;
 
+function installer_test_db(array $db): string
+{
+    $dsn = sprintf(
+        'mysql:host=%s;port=%d;dbname=%s;charset=%s',
+        $db['host'] ?? 'localhost',
+        (int)($db['port'] ?? 3306),
+        $db['dbname'] ?? '',
+        $db['charset'] ?? 'utf8mb4'
+    );
+
+    $pdo = new PDO($dsn, $db['username'] ?? '', $db['password'] ?? '', [
+        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+        PDO::ATTR_TIMEOUT => 5,
+    ]);
+    $row = $pdo->query('SELECT 1')->fetchColumn();
+    if ((int)$row !== 1) {
+        throw new Exception('Connected but validation query failed.');
+    }
+    return 'Database connection succeeded.';
+}
+
+function installer_test_snipe(array $snipe): string
+{
+    if (!function_exists('curl_init')) {
+        throw new Exception('PHP cURL extension is not installed.');
+    }
+    $base   = rtrim($snipe['base_url'] ?? '', '/');
+    $token  = $snipe['api_token'] ?? '';
+    $verify = !empty($snipe['verify_ssl']);
+
+    if ($base === '' || $token === '') {
+        throw new Exception('Base URL or API token is missing.');
+    }
+
+    $url = $base . '/api/v1/models?limit=1';
+    $ch = curl_init();
+    curl_setopt_array($ch, [
+        CURLOPT_URL            => $url,
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_HTTPHEADER     => [
+            'Accept: application/json',
+            'Authorization: Bearer ' . $token,
+        ],
+        CURLOPT_SSL_VERIFYPEER => $verify,
+        CURLOPT_SSL_VERIFYHOST => $verify ? 2 : 0,
+        CURLOPT_TIMEOUT        => 8,
+        CURLOPT_CONNECTTIMEOUT => 4,
+    ]);
+    $raw = curl_exec($ch);
+    if ($raw === false) {
+        $err = curl_error($ch);
+        curl_close($ch);
+        throw new Exception('cURL error: ' . $err);
+    }
+    $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+
+    $decoded = json_decode($raw, true);
+    if ($code >= 400) {
+        $msg = $decoded['message'] ?? $raw;
+        throw new Exception('HTTP ' . $code . ': ' . $msg);
+    }
+    return 'Snipe-IT API reachable (HTTP ' . $code . ').';
+}
+
+function installer_test_ldap(array $ldap): string
+{
+    if (!function_exists('ldap_connect')) {
+        throw new Exception('PHP LDAP extension is not installed.');
+    }
+
+    $host    = $ldap['host'] ?? '';
+    $baseDn  = $ldap['base_dn'] ?? '';
+    $bindDn  = $ldap['bind_dn'] ?? '';
+    $bindPwd = $ldap['bind_password'] ?? '';
+    $ignore  = !empty($ldap['ignore_cert']);
+
+    if ($host === '') {
+        throw new Exception('LDAP host is missing.');
+    }
+
+    if ($ignore && function_exists('ldap_set_option')) {
+        @ldap_set_option(null, LDAP_OPT_X_TLS_REQUIRE_CERT, LDAP_OPT_X_TLS_ALLOW);
+    }
+
+    $conn = @ldap_connect($host);
+    if (!$conn) {
+        throw new Exception('Could not connect to LDAP host.');
+    }
+    @ldap_set_option($conn, LDAP_OPT_PROTOCOL_VERSION, 3);
+    @ldap_set_option($conn, LDAP_OPT_REFERRALS, 0);
+    if (defined('LDAP_OPT_NETWORK_TIMEOUT')) {
+        @ldap_set_option($conn, LDAP_OPT_NETWORK_TIMEOUT, 5);
+    }
+
+    $bindOk = $bindDn !== ''
+        ? @ldap_bind($conn, $bindDn, $bindPwd)
+        : @ldap_bind($conn);
+
+    if ($bindOk === false) {
+        $err = function_exists('ldap_error') ? @ldap_error($conn) : 'Unknown LDAP error';
+        throw new Exception('Bind failed: ' . $err);
+    }
+
+    if ($baseDn !== '') {
+        $search = @ldap_search($conn, $baseDn, '(objectClass=*)', ['dn'], 0, 1, 3);
+        if ($search === false) {
+            $err = function_exists('ldap_error') ? @ldap_error($conn) : 'Unknown LDAP error';
+            throw new Exception('Search failed: ' . $err);
+        }
+    }
+
+    @ldap_unbind($conn);
+    return 'LDAP connection and bind succeeded.';
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$installLocked) {
     $post = static function (string $key, $fallback = '') {
         return trim($_POST[$key] ?? $fallback);
     };
 
-    if ($configExists && !isset($_POST['overwrite_ok'])) {
+    $action = $_POST['action'] ?? 'save';
+
+    if ($configExists && !isset($_POST['overwrite_ok']) && $action === 'save') {
         $errors[] = 'config.php already exists. Check "Overwrite existing config.php" to proceed.';
     } else {
         $dbHost    = $post('db_host', 'localhost');
@@ -75,19 +195,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$installLocked) {
         $dbName    = $post('db_name', 'reserveit');
         $dbUser    = $post('db_username', '');
         $dbPassRaw = $_POST['db_password'] ?? '';
-        $dbPass    = $dbPassRaw !== '' ? $dbPassRaw : installer_value($prefillConfig, ['db_booking', 'password'], '');
+        $dbPass    = $dbPassRaw;
         $dbCharset = $post('db_charset', 'utf8mb4');
 
         $snipeUrl     = $post('snipe_base_url', '');
         $snipeTokenRaw = $_POST['snipe_api_token'] ?? '';
-        $snipeToken    = $snipeTokenRaw !== '' ? $snipeTokenRaw : installer_value($prefillConfig, ['snipeit', 'api_token'], '');
+        $snipeToken    = $snipeTokenRaw;
         $snipeVerify   = isset($_POST['snipe_verify_ssl']);
 
         $ldapHost   = $post('ldap_host', 'ldaps://');
         $ldapBase   = $post('ldap_base_dn', '');
         $ldapBind   = $post('ldap_bind_dn', '');
         $ldapPassRaw = $_POST['ldap_bind_password'] ?? '';
-        $ldapPass    = $ldapPassRaw !== '' ? $ldapPassRaw : installer_value($prefillConfig, ['ldap', 'bind_password'], '');
+        $ldapPass    = $ldapPassRaw;
         $ldapIgnore  = isset($_POST['ldap_ignore_cert']);
 
         $staffRaw   = $post('staff_group_cn', '');
@@ -132,6 +252,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$installLocked) {
             'primary_color'         => $primary,
             'missed_cutoff_minutes' => $missed,
         ];
+
+        if ($isAjax && $action !== 'save') {
+            try {
+                if ($action === 'test_db') {
+                    $messages[] = installer_test_db($newConfig['db_booking']);
+                } elseif ($action === 'test_api') {
+                    $messages[] = installer_test_snipe($newConfig['snipeit']);
+                } elseif ($action === 'test_ldap') {
+                    $messages[] = installer_test_ldap($newConfig['ldap']);
+                } else {
+                    $errors[] = 'Unknown test action.';
+                }
+            } catch (Throwable $e) {
+                $errors[] = $e->getMessage();
+            }
+
+            header('Content-Type: application/json');
+            echo json_encode([
+                'ok'       => empty($errors),
+                'messages' => $messages,
+                'errors'   => $errors,
+            ]);
+            exit;
+        }
 
         if (!is_dir(CONFIG_PATH)) {
             @mkdir(CONFIG_PATH, 0755, true);
@@ -252,7 +396,7 @@ $staffText = implode("\n", $staffPref);
         <?php endif; ?>
 
         <?php if (!$installLocked): ?>
-        <form method="post" class="row g-3">
+        <form method="post" action="install.php" class="row g-3" id="installer-form">
             <?php if ($configExists): ?>
                 <div class="col-12">
                     <div class="form-check">
@@ -299,6 +443,10 @@ $staffText = implode("\n", $staffPref);
                                 </div>
                             </div>
                         </div>
+                        <div class="d-flex justify-content-between align-items-center mt-3">
+                            <div class="small text-muted" id="db-test-result"></div>
+                            <button type="button" class="btn btn-outline-primary btn-sm" data-test-action="test_db" data-target="db-test-result">Test database connection</button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -324,6 +472,10 @@ $staffText = implode("\n", $staffPref);
                                     <label class="form-check-label" for="snipe_verify_ssl">Verify SSL certificate</label>
                                 </div>
                             </div>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center mt-3">
+                            <div class="small text-muted" id="api-test-result"></div>
+                            <button type="button" class="btn btn-outline-primary btn-sm" data-test-action="test_api" data-target="api-test-result">Test Snipe-IT API</button>
                         </div>
                     </div>
                 </div>
@@ -357,6 +509,10 @@ $staffText = implode("\n", $staffPref);
                                     <label class="form-check-label" for="ldap_ignore_cert">Ignore SSL certificate errors</label>
                                 </div>
                             </div>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center mt-3">
+                            <div class="small text-muted" id="ldap-test-result"></div>
+                            <button type="button" class="btn btn-outline-primary btn-sm" data-test-action="test_ldap" data-target="ldap-test-result">Test LDAP connection</button>
                         </div>
                     </div>
                 </div>
@@ -429,7 +585,7 @@ $staffText = implode("\n", $staffPref);
             </div>
 
             <div class="col-12 d-flex justify-content-end">
-                <button type="submit" class="btn btn-primary">Generate config &amp; install</button>
+                <button type="submit" name="action" value="save" class="btn btn-primary">Generate config &amp; install</button>
             </div>
         </form>
         <?php else: ?>
@@ -440,4 +596,90 @@ $staffText = implode("\n", $staffPref);
     </div>
 </div>
 </body>
+<?php if (!$installLocked): ?>
+<script>
+(function () {
+    const form = document.getElementById('installer-form');
+    if (!form) return;
+
+    const clearStatus = (el) => {
+        if (!el) return;
+        el.textContent = '';
+        el.classList.remove('text-success', 'text-danger');
+        el.classList.add('text-muted');
+    };
+
+    const setStatus = (el, text, isError) => {
+        if (!el) return;
+        el.textContent = text;
+        el.classList.remove('text-muted');
+        el.classList.toggle('text-success', !isError);
+        el.classList.toggle('text-danger', isError);
+    };
+
+    form.querySelectorAll('[data-test-action]').forEach((btn) => {
+        btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            const action = btn.getAttribute('data-test-action');
+            const targetId = btn.getAttribute('data-target');
+            const target = targetId ? document.getElementById(targetId) : null;
+            clearStatus(target);
+            setStatus(target, 'Testing...', false);
+            btn.disabled = true;
+
+            const fd = new FormData(form);
+            fd.set('action', action);
+            fd.set('ajax', '1');
+
+            const actionUrl = (form.getAttribute('action') || window.location.href).split('#')[0];
+            const controller = new AbortController();
+            const timeout = setTimeout(() => controller.abort(), 8000);
+
+            fetch(actionUrl, {
+                method: 'POST',
+                body: fd,
+                headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' },
+                credentials: 'same-origin',
+                signal: controller.signal
+            })
+                .then(async (res) => {
+                    clearTimeout(timeout);
+                    if (!res.ok) {
+                        const text = await res.text().catch(() => '');
+                        throw new Error(text || 'Request failed');
+                    }
+                    try {
+                        return await res.json();
+                    } catch (_) {
+                        const text = await res.text().catch(() => '');
+                        throw new Error(text || 'Invalid response');
+                    }
+                })
+                .then((data) => {
+                    const errs = Array.isArray(data.errors) ? data.errors : [];
+                    const msgs = Array.isArray(data.messages) ? data.messages : [];
+                    if (errs.length) {
+                        setStatus(target, errs.join(' | '), true);
+                    } else if (msgs.length) {
+                        setStatus(target, msgs.join(' | '), false);
+                    } else {
+                        setStatus(target, 'No response received.', true);
+                    }
+                })
+                .catch((err) => {
+                    clearTimeout(timeout);
+                    if (err.name === 'AbortError') {
+                        setStatus(target, 'Request timed out. Please check the host/URL.', true);
+                    } else {
+                        setStatus(target, err.message || 'Test failed.', true);
+                    }
+                })
+                .finally(() => {
+                    btn.disabled = false;
+                });
+        });
+    });
+})();
+</script>
+<?php endif; ?>
 </html>
