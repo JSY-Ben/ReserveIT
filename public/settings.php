@@ -358,7 +358,7 @@ $allowedCategoryIds = array_map('intval', $allowedCategoryIds);
             </div>
         <?php endif; ?>
 
-        <form method="post" class="row g-3" id="settings-form">
+        <form method="post" action="settings.php" class="row g-3" id="settings-form">
             <div class="col-12">
                 <div class="card">
                     <div class="card-body">
@@ -613,7 +613,9 @@ $allowedCategoryIds = array_map('intval', $allowedCategoryIds);
             fd.set('action', action);
             fd.set('ajax', '1');
 
-            fetch(form.action || window.location.href, {
+            const actionUrl = (form.getAttribute('action') || window.location.href).split('#')[0];
+
+            fetch(actionUrl, {
                 method: 'POST',
                 body: fd,
                 headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' },
