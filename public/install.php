@@ -211,15 +211,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$installLocked) {
         $ldapIgnore  = isset($_POST['ldap_ignore_cert']);
 
         // Defaults for omitted settings
-        $staffCns   = [];
-        $timezone   = 'Europe/Jersey';
-        $debug      = false;
-        $logoUrl    = '';
-        $primary    = '#660000';
-        $missed     = 60;
-        $pageLimit  = $definedValues['SNIPEIT_API_PAGE_LIMIT'];
+        $staffCns    = [];
+        $timezone    = 'Europe/Jersey';
+        $debug       = true;
+        $logoUrl     = '';
+        $primary     = '#660000';
+        $missed      = 60;
+        $apiCacheTtl = 60;
+        $pageLimit   = $definedValues['SNIPEIT_API_PAGE_LIMIT'];
         $cataloguePP = $definedValues['CATALOGUE_ITEMS_PER_PAGE'];
-        $maxModels  = $definedValues['SNIPEIT_MAX_MODELS_FETCH'];
+        $maxModels   = $definedValues['SNIPEIT_MAX_MODELS_FETCH'];
 
         $newConfig = $defaultConfig;
         $newConfig['db_booking'] = [
@@ -249,6 +250,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$installLocked) {
             'logo_url'              => $logoUrl,
             'primary_color'         => $primary,
             'missed_cutoff_minutes' => $missed,
+            'api_cache_ttl_seconds' => $apiCacheTtl,
+        ];
+        $newConfig['catalogue'] = [
+            'allowed_categories' => [],
         ];
 
         if ($isAjax && $action !== 'save') {
