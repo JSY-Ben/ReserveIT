@@ -65,9 +65,9 @@ if ($row && $row['c'] > 0) {
 }
 
 // Build user info from Snipe-IT user record
-$studentName  = trim($user['first_name'] . ' ' . $user['last_name']);
-$studentEmail = $user['email'];
-$studentId    = $user['id']; // store their Snipe-IT ID as "user_id" too if you like
+$userName  = trim($user['first_name'] . ' ' . $user['last_name']);
+$userEmail = $user['email'];
+$userId    = $user['id']; // store their Snipe-IT ID as "user_id" too if you like
 
 // Insert booking
 $insert = $pdo->prepare("
@@ -82,9 +82,9 @@ $insert = $pdo->prepare("
     )
 ");
 $insert->execute([
-    ':user_name'        => $studentName,
-    ':user_email'       => $studentEmail,
-    ':user_id'          => $studentId,
+    ':user_name'        => $userName,
+    ':user_email'       => $userEmail,
+    ':user_id'          => $userId,
     ':snipeit_user_id'  => $user['id'],
     ':asset_id'         => $assetId,
     ':asset_name_cache' => 'Pending checkout',

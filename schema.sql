@@ -11,7 +11,7 @@ SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 SET time_zone = "+00:00";
 
 -- ------------------------------------------------------
--- Users table (legacy table name: students)
+-- Users table
 -- (local representation of authenticated users)
 -- ------------------------------------------------------
 CREATE TABLE IF NOT EXISTS users (

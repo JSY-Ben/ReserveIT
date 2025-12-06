@@ -32,7 +32,7 @@ function uk_datetime(?string $isoDatetime): string
 $active  = basename($_SERVER['PHP_SELF']);
 $isStaff = !empty($currentUser['is_admin']);
 
-$studentName = trim(($currentUser['first_name'] ?? '') . ' ' . ($currentUser['last_name'] ?? ''));
+$userName = trim(($currentUser['first_name'] ?? '') . ' ' . ($currentUser['last_name'] ?? ''));
 
 // Load this user's reservations
 try {
@@ -43,7 +43,7 @@ try {
         ORDER BY start_datetime DESC
     ";
     $stmt = $pdo->prepare($sql);
-    $stmt->execute([':user_name' => $studentName]);
+    $stmt->execute([':user_name' => $userName]);
     $reservations = $stmt->fetchAll(PDO::FETCH_ASSOC);
 } catch (Exception $e) {
     $reservations = [];
@@ -79,7 +79,7 @@ try {
         <div class="top-bar mb-3">
             <div class="top-bar-user">
                 Logged in as:
-                <strong><?= h($studentName) ?></strong>
+                <strong><?= h($userName) ?></strong>
                 (<?= h($currentUser['email'] ?? '') ?>)
             </div>
             <div class="top-bar-actions">
@@ -111,7 +111,7 @@ try {
                         </h5>
                         <p class="card-text">
                             <strong>User Name:</strong>
-                            <?= h($res['user_name'] ?? $studentName) ?><br>
+                            <?= h($res['user_name'] ?? $userName) ?><br>
 
                             <strong>Start:</strong>
                             <?= uk_datetime($res['start_datetime'] ?? '') ?><br>

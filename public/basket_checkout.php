@@ -35,9 +35,9 @@ if ($end <= $start) {
 }
 
 // Build user info from Snipe-IT user record
-$studentName  = trim($user['first_name'] . ' ' . $user['last_name']);
-$studentEmail = $user['email'];
-$studentId    = $user['id']; // Snipe-IT user id
+$userName  = trim($user['first_name'] . ' ' . $user['last_name']);
+$userEmail = $user['email'];
+$userId    = $user['id']; // Snipe-IT user id
 
 $pdo->beginTransaction();
 
@@ -118,9 +118,9 @@ try {
         )
     ");
     $insertRes->execute([
-        ':user_name'        => $studentName,
-        ':user_email'       => $studentEmail,
-        ':user_id'          => $studentId,
+        ':user_name'        => $userName,
+        ':user_email'       => $userEmail,
+        ':user_id'          => $userId,
         ':snipeit_user_id'  => $user['id'],
         ':asset_name_cache' => 'Pending checkout',
         ':start_datetime'   => $start,
