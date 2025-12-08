@@ -246,7 +246,8 @@ if (!empty($allowedCategoryMap) && !empty($categories)) {
             </div>
             <div class="top-bar-actions d-flex gap-2">
                 <a href="basket.php"
-                   class="btn btn-outline-primary"
+                   class="btn btn-warning fw-semibold shadow-sm px-4"
+                   style="border:2px solid #c07a00; font-size:16px;"
                    id="view-basket-btn">
                     View basket<?= $basketCount > 0 ? ' (' . $basketCount . ')' : '' ?>
                 </a>
