@@ -296,7 +296,7 @@ $isStaff = !empty($currentUser['is_admin']);
                                    value="<?= htmlspecialchars($previewEndRaw) ?>">
                         </div>
                         <div class="col-md-4 d-grid">
-                            <button class="btn btn-primary btn-lg mt-3 mt-md-0" type="submit">
+                            <button class="btn btn-outline-primary mt-3 mt-md-0" type="submit">
                                 Check availability
                             </button>
                         </div>
@@ -316,7 +316,7 @@ $isStaff = !empty($currentUser['is_admin']);
                     and reject the booking if another user has taken items in the meantime.
                 </p>
 
-                <button class="btn btn-primary"
+                <button class="btn btn-primary btn-lg px-4"
                         type="submit"
                         <?= (!$previewStart || !$previewEnd) ? 'disabled' : '' ?>>
                     Confirm booking for all items
