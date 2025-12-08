@@ -4,7 +4,7 @@
 // to the users who hold them (and optionally log to stdout).
 //
 // Requirements:
-// - Configure Microsoft Graph app with application permissions: Chat.Create, Chat.ReadWrite, User.Read.All
+// - Configure Microsoft Graph app with application permissions: Chat.Create, Chat.ReadWrite.All, User.Read.All
 // - Environment variables:
 //     GRAPH_TENANT_ID
 //     GRAPH_CLIENT_ID
@@ -18,7 +18,7 @@
 // Azure setup (for chats):
 // 1) Register an app in Entra ID → get Client ID and Tenant ID.
 // 2) Create a client secret.
-// 3) Add Microsoft Graph application permissions: Chat.Create, Chat.ReadWrite, User.Read.All.
+// 3) Add Microsoft Graph application permissions: Chat.Create, Chat.ReadWrite.All, User.Read.All.
 // 4) Grant admin consent for those permissions.
 // 5) Use the env vars above; GRAPH_SCOPE defaults to https://graph.microsoft.com/.default.
 
