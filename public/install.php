@@ -11,6 +11,7 @@ define('APP_ROOT', dirname(__DIR__));
 define('CONFIG_PATH', APP_ROOT . '/config');
 
 require_once APP_ROOT . '/src/config_writer.php';
+require_once APP_ROOT . '/src/email.php';
 
 $configPath  = CONFIG_PATH . '/config.php';
 $examplePath = CONFIG_PATH . '/config.example.php';
@@ -299,6 +300,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$installLocked) {
         $newConfig['catalogue'] = [
             'allowed_categories' => [],
         ];
+        $newConfig['smtp'] = [
+            'host'       => $post('smtp_host', ''),
+            'port'       => (int)$post('smtp_port', 587),
+            'username'   => $post('smtp_username', ''),
+            'password'   => $_POST['smtp_password'] ?? '',
+            'encryption' => $post('smtp_encryption', 'tls'),
+            'auth_method'=> $post('smtp_auth_method', 'login'),
+            'from_email' => $post('smtp_from_email', ''),
+            'from_name'  => $post('smtp_from_name', 'ReserveIT'),
+        ];
 
         if ($isAjax && $action !== 'save') {
             try {
@@ -308,6 +319,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$installLocked) {
                     $messages[] = installer_test_snipe($newConfig['snipeit']);
                 } elseif ($action === 'test_ldap') {
                     $messages[] = installer_test_ldap($newConfig['ldap']);
+                } elseif ($action === 'test_smtp') {
+                    $smtp = $newConfig['smtp'];
+                    if (empty($smtp['host']) || empty($smtp['from_email'])) {
+                        throw new Exception('SMTP host and from email are required.');
+                    }
+                    $targetEmail = $smtp['from_email'];
+                    $targetName  = $smtp['from_name'] ?? $targetEmail;
+                    $sent = reserveit_send_notification(
+                        $targetEmail,
+                        $targetName,
+                        'ReserveIT SMTP test',
+                        ['This is a test email from the installer SMTP settings.'],
+                        ['smtp' => $smtp]
+                    );
+                    if ($sent) {
+                        $messages[] = 'SMTP test email sent to ' . $targetEmail . '.';
+                    } else {
+                        throw new Exception('SMTP send failed (see logs).');
+                    }
                 } else {
                     $errors[] = 'Unknown test action.';
                 }
@@ -605,7 +635,70 @@ $staffText = implode("\n", $staffPref);
                     <div class="card-body">
                         <h5 class="card-title mb-1">LDAP/AD Admin Group(s)</h5>
                         <p class="text-muted small mb-3">Comma or newline separated LDAP/AD Group names that contain users that you wish to be Administrators/Staff on this app.</p>
-                        <textarea name="staff_group_cn" rows="3" class="form-control" placeholder="ICT Staff&#10;Another Group"></textarea>
+                        <textarea name="staff_group_cn" rows="3" class="form-control" placeholder="ICT Staff&#10;Another Group"><?= installer_h($staffText) ?></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title mb-1">SMTP (email)</h5>
+                        <p class="text-muted small mb-3">Used for notification emails during and after setup.</p>
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <label class="form-label">SMTP host</label>
+                                <input type="text" name="smtp_host" class="form-control" value="<?= installer_h($pref(['smtp', 'host'], '')) ?>">
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label">Port</label>
+                                <input type="number" name="smtp_port" class="form-control" value="<?= (int)$pref(['smtp', 'port'], 587) ?>">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Encryption</label>
+                                <select name="smtp_encryption" class="form-select">
+                                    <?php
+                                    $enc = strtolower($pref(['smtp', 'encryption'], 'tls'));
+                                    foreach (['none', 'ssl', 'tls'] as $opt) {
+                                        $sel = $enc === $opt ? 'selected' : '';
+                                        echo "<option value=\"{$opt}\" {$sel}>" . strtoupper($opt) . "</option>";
+                                    }
+                                    ?>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Auth method</label>
+                                <select name="smtp_auth_method" class="form-select">
+                                    <?php
+                                    $auth = strtolower($pref(['smtp', 'auth_method'], 'login'));
+                                    foreach (['login', 'plain', 'none'] as $opt) {
+                                        $sel = $auth === $opt ? 'selected' : '';
+                                        echo "<option value=\"{$opt}\" {$sel}>" . strtoupper($opt) . "</option>";
+                                    }
+                                    ?>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Username</label>
+                                <input type="text" name="smtp_username" class="form-control" value="<?= installer_h($pref(['smtp', 'username'], '')) ?>">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Password</label>
+                                <input type="password" name="smtp_password" class="form-control">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">From email</label>
+                                <input type="email" name="smtp_from_email" class="form-control" value="<?= installer_h($pref(['smtp', 'from_email'], '')) ?>">
+                            </div>
+                            <div class="col-md-5">
+                                <label class="form-label">From name</label>
+                                <input type="text" name="smtp_from_name" class="form-control" value="<?= installer_h($pref(['smtp', 'from_name'], 'ReserveIT')) ?>">
+                            </div>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center mt-3">
+                            <div class="small text-muted" id="smtp-test-result"></div>
+                            <button type="button" class="btn btn-outline-primary btn-sm" data-test-action="test_smtp" data-target="smtp-test-result">Test SMTP</button>
+                        </div>
                     </div>
                 </div>
             </div>

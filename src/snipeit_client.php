@@ -555,15 +555,24 @@ function find_single_user_by_email_or_name(string $query): array
 
     // Try to find exact email match
     $exactEmailMatches = [];
+    $exactNameMatches  = [];
+    $qLower = strtolower($q);
     foreach ($rows as $row) {
         $email = $row['email'] ?? '';
-        if ($email !== '' && strcasecmp(trim($email), $q) === 0) {
+        $name  = $row['name'] ?? ($row['username'] ?? '');
+        if ($email !== '' && strtolower(trim($email)) === $qLower) {
             $exactEmailMatches[] = $row;
+        }
+        if ($name !== '' && strtolower(trim($name)) === $qLower) {
+            $exactNameMatches[] = $row;
         }
     }
 
     if (count($exactEmailMatches) === 1) {
         return $exactEmailMatches[0];
+    }
+    if (count($exactNameMatches) === 1) {
+        return $exactNameMatches[0];
     }
 
     // Multiple matches, ambiguous

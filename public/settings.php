@@ -4,6 +4,7 @@ require_once SRC_PATH . '/auth.php';
 require_once SRC_PATH . '/footer.php';
 require_once SRC_PATH . '/config_writer.php';
 require_once SRC_PATH . '/snipeit_client.php';
+require_once SRC_PATH . '/email.php';
 
 $active  = basename($_SERVER['PHP_SELF']);
 $isStaff = !empty($currentUser['is_admin']);
@@ -239,6 +240,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
     $catalogue['allowed_categories'] = $allowedCategories;
 
+    $smtp = $config['smtp'] ?? [];
+    $smtp['host']       = $post('smtp_host', $smtp['host'] ?? '');
+    $smtp['port']       = (int)$post('smtp_port', $smtp['port'] ?? 587);
+    $smtp['username']   = $post('smtp_username', $smtp['username'] ?? '');
+    $smtpPassInput      = $_POST['smtp_password'] ?? '';
+    $smtp['password']   = $smtpPassInput === '' ? ($config['smtp']['password'] ?? '') : $smtpPassInput;
+    $smtp['encryption'] = $post('smtp_encryption', $smtp['encryption'] ?? 'tls');
+    $smtp['auth_method'] = $post('smtp_auth_method', $smtp['auth_method'] ?? 'login');
+    $smtp['from_email'] = $post('smtp_from_email', $smtp['from_email'] ?? '');
+    $smtp['from_name']  = $post('smtp_from_name', $smtp['from_name'] ?? 'ReserveIT');
+
     $newConfig = $config;
     $newConfig['db_booking'] = $db;
     $newConfig['ldap']       = $ldap;
@@ -246,6 +258,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $newConfig['auth']       = $auth;
     $newConfig['app']        = $app;
     $newConfig['catalogue']  = $catalogue;
+    $newConfig['smtp']       = $smtp;
 
     // Keep posted values in the form
     $config        = $newConfig;
@@ -272,6 +285,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $messages[] = reserveit_test_ldap($ldap);
         } catch (Throwable $e) {
             $errors[] = 'LDAP test failed: ' . $e->getMessage();
+        }
+    } elseif ($action === 'test_smtp') {
+        try {
+            if (empty($smtp['host']) || empty($smtp['from_email'])) {
+                throw new Exception('SMTP host and from email are required.');
+            }
+            $targetEmail = $smtp['from_email'];
+            $targetName  = $smtp['from_name'] ?? $targetEmail;
+            $sent = reserveit_send_notification(
+                $targetEmail,
+                $targetName,
+                'ReserveIT SMTP test',
+                ['This is a test email from ReserveIT SMTP settings.'],
+                ['smtp' => $smtp] + $config
+            );
+            if ($sent) {
+                $messages[] = 'SMTP test email sent to ' . $targetEmail . '.';
+            } else {
+                throw new Exception('SMTP send failed (see logs).');
+            }
+        } catch (Throwable $e) {
+            $errors[] = 'SMTP test failed: ' . $e->getMessage();
         }
     } else {
         $content = reserveit_build_config_file($newConfig, [
@@ -492,6 +527,69 @@ $allowedCategoryIds = array_map('intval', $allowedCategoryIds);
                         <h5 class="card-title mb-1">LDAP/AD Admin Group(s)</h5>
                         <p class="text-muted small mb-3">Comma or newline separated LDAP/AD Group names that contain users that you wish to be Administrators/Staff on this app.</p>
                         <textarea name="staff_group_cn" rows="3" class="form-control" placeholder="ICT Staff&#10;Another Group"><?= reserveit_textarea_value($staffGroupText) ?></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title mb-1">SMTP (email)</h5>
+                        <p class="text-muted small mb-3">Used for notification emails. Leave password blank to keep existing.</p>
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <label class="form-label">SMTP host</label>
+                                <input type="text" name="smtp_host" class="form-control" value="<?= h($cfg(['smtp', 'host'], '')) ?>">
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label">Port</label>
+                                <input type="number" name="smtp_port" class="form-control" value="<?= (int)$cfg(['smtp', 'port'], 587) ?>">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Encryption</label>
+                                <select name="smtp_encryption" class="form-select">
+                                    <?php
+                                    $enc = strtolower($cfg(['smtp', 'encryption'], 'tls'));
+                                    foreach (['none', 'ssl', 'tls'] as $opt) {
+                                        $sel = $enc === $opt ? 'selected' : '';
+                                        echo "<option value=\"{$opt}\" {$sel}>" . strtoupper($opt) . "</option>";
+                                    }
+                                    ?>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Auth method</label>
+                                <select name="smtp_auth_method" class="form-select">
+                                    <?php
+                                    $auth = strtolower($cfg(['smtp', 'auth_method'], 'login'));
+                                    foreach (['login', 'plain', 'none'] as $opt) {
+                                        $sel = $auth === $opt ? 'selected' : '';
+                                        echo "<option value=\"{$opt}\" {$sel}>" . strtoupper($opt) . "</option>";
+                                    }
+                                    ?>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Username</label>
+                                <input type="text" name="smtp_username" class="form-control" value="<?= h($cfg(['smtp', 'username'], '')) ?>">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Password</label>
+                                <input type="password" name="smtp_password" class="form-control" placeholder="Leave blank to keep">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">From email</label>
+                                <input type="email" name="smtp_from_email" class="form-control" value="<?= h($cfg(['smtp', 'from_email'], '')) ?>">
+                            </div>
+                            <div class="col-md-5">
+                                <label class="form-label">From name</label>
+                                <input type="text" name="smtp_from_name" class="form-control" value="<?= h($cfg(['smtp', 'from_name'], 'ReserveIT')) ?>">
+                            </div>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center mt-3">
+                            <div class="small text-muted" id="smtp-test-result"></div>
+                            <button type="button" class="btn btn-outline-primary btn-sm" data-test-action="test_smtp" data-target="smtp-test-result">Test SMTP</button>
+                        </div>
                     </div>
                 </div>
             </div>

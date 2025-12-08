@@ -6,6 +6,7 @@ require_once __DIR__ . '/../src/bootstrap.php';
 require_once SRC_PATH . '/auth.php';
 require_once SRC_PATH . '/snipeit_client.php';
 require_once SRC_PATH . '/db.php';
+require_once SRC_PATH . '/email.php';
 require_once SRC_PATH . '/footer.php';
 
 $active  = basename($_SERVER['PHP_SELF']);
@@ -104,6 +105,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
 
                 if (empty($errors)) {
+                    // Email notifications
+                    $userEmail  = $user['email'] ?? '';
+                    $staffEmail = $currentUser['email'] ?? '';
+                    $staffName  = trim(($currentUser['first_name'] ?? '') . ' ' . ($currentUser['last_name'] ?? ''));
+                    $assetList  = array_map(function ($a) {
+                        $tag   = $a['asset_tag'] ?? '';
+                        $model = $a['model'] ?? '';
+                        return $model !== '' ? "{$tag} ({$model})" : $tag;
+                    }, $checkoutAssets);
+                    $assetLines = implode(', ', array_filter($assetList));
+                    $bodyLines = [
+                        'Assets checked out:',
+                        $assetLines,
+                        $note !== '' ? "Note: {$note}" : '',
+                    ];
+                    if ($userEmail !== '') {
+                        reserveit_send_notification($userEmail, $userName, 'Assets checked out', $bodyLines);
+                    }
+                    if ($staffEmail !== '') {
+                        reserveit_send_notification($staffEmail, $staffName !== '' ? $staffName : $staffEmail, 'You checked out assets', $bodyLines);
+                    }
+
                     $checkoutAssets = [];
                 }
             } catch (Throwable $e) {

@@ -465,7 +465,7 @@ if (!empty($allowedCategoryMap) && !empty($categories)) {
                                       class="mt-auto add-to-basket-form">
                                     <input type="hidden" name="model_id" value="<?= $modelId ?>">
 
-                                    <?php if ($isRequestable): ?>
+                                    <?php if ($isRequestable && $freeNow > 0): ?>
                                         <div class="row g-2 align-items-center mb-2">
                                             <div class="col-6">
                                                 <label class="form-label mb-0 small">Quantity</label>
@@ -484,7 +484,11 @@ if (!empty($allowedCategoryMap) && !empty($categories)) {
                                         </button>
                                     <?php else: ?>
                                         <div class="alert alert-secondary small mb-0">
-                                            No requestable units available.
+                                            <?php if (!$isRequestable): ?>
+                                                No requestable units available.
+                                            <?php else: ?>
+                                                No units available right now.
+                                            <?php endif; ?>
                                         </div>
                                         <button type="button"
                                                 class="btn btn-sm btn-secondary w-100 mt-2"

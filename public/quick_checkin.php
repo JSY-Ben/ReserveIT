@@ -6,6 +6,7 @@ require_once __DIR__ . '/../src/bootstrap.php';
 require_once SRC_PATH . '/auth.php';
 require_once SRC_PATH . '/snipeit_client.php';
 require_once SRC_PATH . '/db.php';
+require_once SRC_PATH . '/email.php';
 require_once SRC_PATH . '/footer.php';
 
 $active  = basename($_SERVER['PHP_SELF']);
@@ -58,12 +59,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     throw new Exception('Asset record from Snipe-IT is missing id/asset_tag.');
                 }
 
+                $assigned = $asset['assigned_to'] ?? ($asset['assigned_to_fullname'] ?? []);
+                $assignedEmail = '';
+                $assignedName  = '';
+                if (is_array($assigned)) {
+                    $assignedEmail = $assigned['email'] ?? ($assigned['username'] ?? '');
+                    $assignedName  = $assigned['name'] ?? ($assigned['username'] ?? ($assigned['email'] ?? ''));
+                } elseif (is_string($assigned)) {
+                    $assignedName = $assigned;
+                }
+
                 $checkinAssets[$assetId] = [
                     'id'         => $assetId,
                     'asset_tag'  => $assetTag,
                     'name'       => $assetName,
                     'model'      => $modelName,
                     'status'     => $status,
+                    'assigned_email' => $assignedEmail,
+                    'assigned_name'  => $assignedName,
                 ];
                 $messages[] = "Added asset {$assetTag} ({$assetName}) to check-in list.";
             } catch (Throwable $e) {
@@ -76,17 +89,56 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (empty($checkinAssets)) {
             $errors[] = 'There are no assets in the check-in list.';
         } else {
+            $staffEmail = $currentUser['email'] ?? '';
+            $staffName  = trim(($currentUser['first_name'] ?? '') . ' ' . ($currentUser['last_name'] ?? ''));
+            $assetTags  = [];
+            $userBuckets = [];
+
             foreach ($checkinAssets as $asset) {
                 $assetId  = (int)$asset['id'];
                 $assetTag = $asset['asset_tag'] ?? '';
                 try {
                     checkin_asset($assetId, $note);
                     $messages[] = "Checked in asset {$assetTag}.";
+                    $model = $asset['model'] ?? '';
+                    $formatted = $model !== '' ? ($assetTag . ' (' . $model . ')') : $assetTag;
+                    $assetTags[] = $formatted;
+
+                    $assignedEmail = $asset['assigned_email'] ?? '';
+                    $assignedName  = $asset['assigned_name'] ?? '';
+                    if ($assignedEmail !== '') {
+                        if (!isset($userBuckets[$assignedEmail])) {
+                            $userBuckets[$assignedEmail] = [
+                                'name' => $assignedName !== '' ? $assignedName : $assignedEmail,
+                                'assets' => [],
+                            ];
+                        }
+                        $userBuckets[$assignedEmail]['assets'][] = $formatted;
+                    }
                 } catch (Throwable $e) {
                     $errors[] = "Failed to check in {$assetTag}: " . $e->getMessage();
                 }
             }
             if (empty($errors)) {
+                // Notify original users
+                foreach ($userBuckets as $email => $info) {
+                    $bodyLines = [
+                        'The following assets have been checked in:',
+                        implode(', ', $info['assets']),
+                        $note !== '' ? "Note: {$note}" : '',
+                    ];
+                    reserveit_send_notification($email, $info['name'], 'Assets checked in', $bodyLines);
+                }
+                // Notify staff performing check-in
+                if ($staffEmail !== '' && !empty($assetTags)) {
+                    $bodyLines = [
+                        'You checked in the following assets:',
+                        implode(', ', $assetTags),
+                        $note !== '' ? "Note: {$note}" : '',
+                    ];
+                    reserveit_send_notification($staffEmail, $staffName !== '' ? $staffName : $staffEmail, 'Assets checked in', $bodyLines);
+                }
+
                 $checkinAssets = [];
             }
         }
