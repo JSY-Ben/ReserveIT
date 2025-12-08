@@ -277,7 +277,7 @@ if (!empty($allowedCategoryMap) && !empty($categories)) {
                         (<?= h(trim(($activeUser['first_name'] ?? '') . ' ' . ($activeUser['last_name'] ?? ''))) ?>)
                     <?php endif; ?>
                 </div>
-                <form method="post" id="booking_user_form" class="d-flex gap-2 mb-0 flex-wrap">
+                <form method="post" id="booking_user_form" class="d-flex gap-2 mb-0 flex-wrap position-relative" style="z-index: 9998;">
                     <input type="hidden" name="mode" value="set_booking_user">
                     <input type="hidden" name="booking_user_email" id="booking_user_email">
                     <input type="hidden" name="booking_user_name" id="booking_user_name">
