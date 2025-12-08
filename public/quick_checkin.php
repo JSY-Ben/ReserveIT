@@ -100,7 +100,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 try {
                     checkin_asset($assetId, $note);
                     $messages[] = "Checked in asset {$assetTag}.";
-                    $assetTags[] = trim($assetTag . ' ' . ($asset['name'] ?? '') . (empty($asset['model']) ? '' : ' (' . $asset['model'] . ')'));
+                    $model = $asset['model'] ?? '';
+                    $formatted = $model !== '' ? ($assetTag . ' (' . $model . ')') : $assetTag;
+                    $assetTags[] = $formatted;
 
                     $assignedEmail = $asset['assigned_email'] ?? '';
                     $assignedName  = $asset['assigned_name'] ?? '';
@@ -111,7 +113,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 'assets' => [],
                             ];
                         }
-                        $userBuckets[$assignedEmail]['assets'][] = $assetTag;
+                        $userBuckets[$assignedEmail]['assets'][] = $formatted;
                     }
                 } catch (Throwable $e) {
                     $errors[] = "Failed to check in {$assetTag}: " . $e->getMessage();
