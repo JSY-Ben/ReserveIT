@@ -95,4 +95,3 @@ foreach ($buckets as $email => $info) {
 }
 
 echo "[done] Sent: {$sent}, Failed: {$failed}\n";
-

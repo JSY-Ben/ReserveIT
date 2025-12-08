@@ -21,12 +21,9 @@ require_once __DIR__ . '/../src/bootstrap.php';
 require_once SRC_PATH . '/snipeit_client.php';
 require_once SRC_PATH . '/email.php';
 
-$staffEmail = getenv('STAFF_EMAIL') ?: '';
-$staffName  = getenv('STAFF_NAME') ?: $staffEmail;
-if ($staffEmail === '') {
-    fwrite(STDERR, "[error] STAFF_EMAIL is required.\n");
-    exit(1);
-}
+// Configure the staff recipient here (UPN/email and display name).
+$staffEmail = 'staff@example.com';
+$staffName  = 'Staff Overdue Reports';
 
 try {
     $assets = list_checked_out_assets(true); // overdue only
@@ -86,4 +83,3 @@ try {
 }
 
 echo "[done]\n";
-
