@@ -261,6 +261,42 @@ body {
     border: 1px solid rgba(var(--primary-rgb), 0.22);
 }
 
+.availability-box {
+    background: linear-gradient(135deg, rgba(var(--primary-rgb), 0.06), rgba(var(--primary-soft-rgb), 0.12));
+    border: 1px solid var(--border);
+    border-radius: 1rem;
+    padding: 1.25rem;
+    box-shadow: 0 10px 24px rgba(15, 23, 42, 0.12);
+    position: relative;
+    overflow: hidden;
+}
+
+.availability-box::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: radial-gradient(circle at 20% 20%, rgba(255,255,255,0.35), transparent 35%),
+                radial-gradient(circle at 80% 0%, rgba(255,255,255,0.25), transparent 35%);
+}
+
+.availability-box > * {
+    position: relative;
+    z-index: 1;
+}
+
+.availability-pill {
+    display: inline-block;
+    padding: 0.35rem 0.75rem;
+    border-radius: 999px;
+    font-weight: 700;
+    color: var(--primary-strong);
+    background: #fff;
+    border: 1px solid rgba(var(--primary-rgb), 0.15);
+    box-shadow: 0 6px 14px rgba(var(--primary-rgb), 0.15);
+    letter-spacing: 0.01em;
+}
+
 /* Preserve newlines in error messages on login */
 .white-space-prewrap {
     white-space: pre-wrap;

@@ -276,27 +276,33 @@ $isStaff = !empty($currentUser['is_admin']);
             </div>
 
             <!-- Form to preview availability for chosen dates -->
-            <form method="get" action="basket.php" class="mb-4">
-                <div class="row g-3 align-items-end">
-                    <div class="col-md-4">
-                        <label class="form-label">Start date &amp; time</label>
-                        <input type="datetime-local" name="start_datetime"
-                               class="form-control"
-                               value="<?= htmlspecialchars($previewStartRaw) ?>">
-                    </div>
-                    <div class="col-md-4">
-                        <label class="form-label">End date &amp; time</label>
-                        <input type="datetime-local" name="end_datetime"
-                               class="form-control"
-                               value="<?= htmlspecialchars($previewEndRaw) ?>">
-                    </div>
-                    <div class="col-md-4">
-                        <button class="btn btn-outline-primary w-100 mt-3 mt-md-0" type="submit">
-                            Check availability
-                        </button>
-                    </div>
+            <div class="availability-box mb-4">
+                <div class="d-flex align-items-center mb-3 flex-wrap gap-2">
+                    <div class="availability-pill">Select reservation window</div>
+                    <div class="text-muted small">Start defaults to now, end to tomorrow at 09:00</div>
                 </div>
-            </form>
+                <form method="get" action="basket.php">
+                    <div class="row g-3 align-items-end">
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Start date &amp; time</label>
+                            <input type="datetime-local" name="start_datetime"
+                                   class="form-control form-control-lg"
+                                   value="<?= htmlspecialchars($previewStartRaw) ?>">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">End date &amp; time</label>
+                            <input type="datetime-local" name="end_datetime"
+                                   class="form-control form-control-lg"
+                                   value="<?= htmlspecialchars($previewEndRaw) ?>">
+                        </div>
+                        <div class="col-md-4 d-grid">
+                            <button class="btn btn-primary btn-lg mt-3 mt-md-0" type="submit">
+                                Check availability
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
 
             <!-- Final checkout form (uses the same dates, if provided) -->
             <form method="post" action="basket_checkout.php">
