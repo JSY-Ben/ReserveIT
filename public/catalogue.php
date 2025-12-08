@@ -286,10 +286,9 @@ if (!empty($allowedCategoryMap) && !empty($categories)) {
                                id="booking_user_input"
                                class="form-control form-control-sm"
                                placeholder="Start typing email or name"
-                               autocomplete="off">
-                        <div class="list-group position-absolute w-100"
-                             id="booking_user_suggestions"
-                             style="z-index: 9999; max-height: 260px; overflow-y: auto; display: none; box-shadow: 0 12px 24px rgba(0,0,0,0.18);"></div>
+                               autocomplete="off"
+                               list="booking_user_list">
+                        <datalist id="booking_user_list"></datalist>
                     </div>
                     <button class="btn btn-sm btn-primary" type="submit">Use</button>
                     <button class="btn btn-sm btn-outline-secondary" type="submit" name="booking_user_revert" value="1">Revert to logged in user</button>
@@ -536,7 +535,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const viewBasketBtn = document.getElementById('view-basket-btn');
     const forms = document.querySelectorAll('.add-to-basket-form');
     const bookingInput = document.getElementById('booking_user_input');
-    const bookingList  = document.getElementById('booking_user_suggestions');
+    const bookingList  = document.getElementById('booking_user_list');
     const bookingEmail = document.getElementById('booking_user_email');
     const bookingName  = document.getElementById('booking_user_name');
     let bookingTimer   = null;
@@ -584,7 +583,6 @@ document.addEventListener('DOMContentLoaded', function () {
 
     function hideBookingSuggestions() {
         if (!bookingList) return;
-        bookingList.style.display = 'none';
         bookingList.innerHTML = '';
     }
 
@@ -592,26 +590,17 @@ document.addEventListener('DOMContentLoaded', function () {
         if (!bookingList) return;
         bookingList.innerHTML = '';
         if (!items || !items.length) {
-            hideBookingSuggestions();
             return;
         }
         items.forEach(function (item) {
             const email = item.email || '';
             const name = item.name || '';
             const label = (name && email && name !== email) ? (name + ' (' + email + ')') : (name || email);
-            const btn = document.createElement('button');
-            btn.type = 'button';
-            btn.className = 'list-group-item list-group-item-action';
-            btn.textContent = label;
-            btn.addEventListener('click', function () {
-                bookingInput.value = label;
-                bookingEmail.value = email;
-                bookingName.value  = name || email;
-                hideBookingSuggestions();
-            });
-            bookingList.appendChild(btn);
+            const opt = document.createElement('option');
+            opt.value = email;
+            opt.label = label;
+            bookingList.appendChild(opt);
         });
-        bookingList.style.display = 'block';
     }
 
     if (bookingInput && bookingList) {
@@ -638,8 +627,13 @@ document.addEventListener('DOMContentLoaded', function () {
             }, 250);
         });
 
-        bookingInput.addEventListener('blur', function () {
-            setTimeout(hideBookingSuggestions, 150);
+        bookingInput.addEventListener('change', function () {
+            const email = bookingInput.value.trim();
+            const match = bookingList ? Array.from(bookingList.options).find(function (opt) {
+                return opt.value === email;
+            }) : null;
+            bookingEmail.value = email;
+            bookingName.value  = match ? match.label : email;
         });
     }
 });
