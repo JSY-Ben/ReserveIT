@@ -9,6 +9,13 @@ require_once SRC_PATH . '/db.php';
 require_once SRC_PATH . '/email.php';
 require_once SRC_PATH . '/footer.php';
 
+$now = new DateTime();
+$defaultStart = $now->format('Y-m-d\TH:i');
+$defaultEnd   = (new DateTime('tomorrow 9:00'))->format('Y-m-d\TH:i');
+
+$startRaw = $_POST['start_datetime'] ?? $defaultStart;
+$endRaw   = $_POST['end_datetime'] ?? $defaultEnd;
+
 $reservationConflicts = [];
 
 // Helpers
@@ -127,11 +134,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $checkoutTo      = trim($_POST['checkout_to'] ?? '');
         $note            = trim($_POST['note'] ?? '');
         $overrideAllowed = isset($_POST['override_conflicts']) && $_POST['override_conflicts'] === '1';
+        $startRaw        = trim($_POST['start_datetime'] ?? $startRaw);
+        $endRaw          = trim($_POST['end_datetime'] ?? $endRaw);
+
+        $startTs = strtotime($startRaw);
+        $endTs   = strtotime($endRaw);
 
         if ($checkoutTo === '') {
             $errors[] = 'Please enter the Snipe-IT user (email or name) to check out to.';
         } elseif (empty($checkoutAssets)) {
             $errors[] = 'There are no assets in the checkout list.';
+        } elseif ($startTs === false || $endTs === false) {
+            $errors[] = 'Invalid start or end date/time.';
+        } elseif ($endTs <= $startTs) {
+            $errors[] = 'End date/time must be after start date/time.';
         } else {
             try {
                 $user = find_single_user_by_email_or_name($checkoutTo);
@@ -157,11 +173,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 if (!empty($reservationConflicts) && !$overrideAllowed) {
                     $errors[] = 'Some assets are reserved for this time. Review who reserved them below or tick "Override" to proceed anyway.';
                 } else {
+                    $expectedCheckinIso = date('Y-m-d H:i:s', $endTs);
+
                     foreach ($checkoutAssets as $asset) {
                         $assetId  = (int)$asset['id'];
                         $assetTag = $asset['asset_tag'] ?? '';
                         try {
-                            checkout_asset_to_user($assetId, $userId, $note, null);
+                            checkout_asset_to_user($assetId, $userId, $note, $expectedCheckinIso);
                             $messages[] = "Checked out asset {$assetTag} to {$userName}." . (!empty($reservationConflicts[$assetId]) ? ' (Override used)' : '');
                         } catch (Throwable $e) {
                             $errors[] = "Failed to check out {$assetTag}: " . $e->getMessage();
@@ -371,6 +389,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                        name="note"
                                        class="form-control"
                                        placeholder="Optional note to store with checkout">
+                            </div>
+                        </div>
+
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Start date &amp; time</label>
+                                <input type="datetime-local"
+                                       name="start_datetime"
+                                       class="form-control"
+                                       value="<?= h($startRaw) ?>">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">End date &amp; time</label>
+                                <input type="datetime-local"
+                                       name="end_datetime"
+                                       class="form-control"
+                                       value="<?= h($endRaw) ?>">
+                                <div class="form-text">Defaults to tomorrow at 09:00.</div>
                             </div>
                         </div>
 
