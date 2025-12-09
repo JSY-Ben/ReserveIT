@@ -264,20 +264,20 @@ function reserveit_checked_out_url(string $base, array $params): string
             </div>
         <?php endif; ?>
 
-        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
-            <?php if ($view === 'overdue' && !empty($assets)): ?>
+        <?php if ($view === 'overdue' && !empty($assets)): ?>
+            <div class="d-flex justify-content-end mb-2">
                 <form method="post" class="mb-0 d-flex gap-2 align-items-center">
                     <input type="hidden" name="view" value="overdue">
                     <input type="hidden" name="renew_all" value="1">
                     <?php if ($search !== ''): ?>
                         <input type="hidden" name="q" value="<?= h($search) ?>">
                     <?php endif; ?>
-                    <button type="submit" class="btn btn-sm btn-outline-primary">
+                    <button type="submit" class="btn btn-primary btn-sm px-3 shadow-sm">
                         Renew all shown to tomorrow
                     </button>
                 </form>
-            <?php endif; ?>
-        </div>
+            </div>
+        <?php endif; ?>
 
         <?php if (!empty($messages)): ?>
             <div class="alert alert-success">
