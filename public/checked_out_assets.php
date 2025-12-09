@@ -61,9 +61,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['renew_asset_id']) && 
     $renewId = (int)$_POST['renew_asset_id'];
     if ($renewId > 0) {
         try {
-            $tomorrow = (new DateTime('tomorrow'))->format('Y-m-d');
+            $tomorrowDt = new DateTime('tomorrow');
+            $tomorrow   = $tomorrowDt->format('Y-m-d');
             update_asset_expected_checkin($renewId, $tomorrow);
-            $messages[] = "Extended expected check-in to {$tomorrow} for asset #{$renewId}.";
+            $messages[] = "Extended expected check-in to " . $tomorrowDt->format('d/m/Y') . " for asset #{$renewId}.";
         } catch (Throwable $e) {
             $error = 'Could not renew asset: ' . $e->getMessage();
         }
@@ -283,4 +284,15 @@ function reserveit_checked_out_url(string $base, array $params): string
 <?php reserveit_footer(); ?>
 </body>
 </html>
+<?php endif; ?>
+<?php if (!empty($messages) && $view === 'overdue'): ?>
+<script>
+    // After showing renew success, refresh overdue list to bust any cached data.
+    setTimeout(() => {
+        const url = new URL(window.location.href);
+        url.searchParams.set('view', 'overdue');
+        url.searchParams.set('_', Date.now().toString());
+        window.location.replace(url.toString());
+    }, 1200);
+</script>
 <?php endif; ?>
