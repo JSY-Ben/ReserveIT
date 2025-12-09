@@ -292,7 +292,9 @@ function reserveit_checked_out_url(string $base, array $params): string
         const url = new URL(window.location.href);
         url.searchParams.set('view', 'overdue');
         url.searchParams.set('_', Date.now().toString());
-        window.location.replace(url.toString());
-    }, 1200);
+        url.searchParams.set('refresh', '1');
+        // Force no-cache reload
+        window.location.reload(true);
+    }, 2500);
 </script>
 <?php endif; ?>
