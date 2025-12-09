@@ -91,6 +91,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } else {
             $staffEmail = $currentUser['email'] ?? '';
             $staffName  = trim(($currentUser['first_name'] ?? '') . ' ' . ($currentUser['last_name'] ?? ''));
+            $staffDisplayName = $staffName !== '' ? $staffName : ($currentUser['email'] ?? 'Staff');
             $assetTags  = [];
             $userBuckets = [];
 
@@ -131,12 +132,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
                 // Notify staff performing check-in
                 if ($staffEmail !== '' && !empty($assetTags)) {
+                    // Build per-user summary for staff so they can see who had the assets
+                    $perUserSummary = [];
+                    foreach ($userBuckets as $email => $info) {
+                        $perUserSummary[] = ($info['name'] ?? $email) . ': ' . implode(', ', $info['assets']);
+                    }
+
                     $bodyLines = [
-                        'You checked in the following assets:',
-                        implode(', ', $assetTags),
+                        'You checked in the following assets (by user):',
+                        implode('; ', $perUserSummary),
                         $note !== '' ? "Note: {$note}" : '',
                     ];
-                    reserveit_send_notification($staffEmail, $staffName !== '' ? $staffName : $staffEmail, 'Assets checked in', $bodyLines);
+                    reserveit_send_notification($staffEmail, $staffDisplayName, 'Assets checked in', $bodyLines);
                 }
 
                 $checkinAssets = [];

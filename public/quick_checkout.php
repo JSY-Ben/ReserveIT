@@ -174,6 +174,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $userEmail  = $user['email'] ?? '';
                     $staffEmail = $currentUser['email'] ?? '';
                     $staffName  = trim(($currentUser['first_name'] ?? '') . ' ' . ($currentUser['last_name'] ?? ''));
+                    $staffDisplayName = $staffName !== '' ? $staffName : ($currentUser['email'] ?? 'Staff');
                     $assetList  = array_map(function ($a) {
                         $tag   = $a['asset_tag'] ?? '';
                         $model = $a['model'] ?? '';
@@ -189,7 +190,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         reserveit_send_notification($userEmail, $userName, 'Assets checked out', $bodyLines);
                     }
                     if ($staffEmail !== '') {
-                        reserveit_send_notification($staffEmail, $staffName !== '' ? $staffName : $staffEmail, 'You checked out assets', $bodyLines);
+                        $staffBody = array_merge(
+                            [
+                                "You checked out assets for {$userName}"
+                            ],
+                            $bodyLines
+                        );
+                        reserveit_send_notification($staffEmail, $staffDisplayName, 'You checked out assets', $staffBody);
                     }
 
                     $checkoutAssets = [];
