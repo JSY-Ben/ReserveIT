@@ -9,6 +9,53 @@ require_once SRC_PATH . '/db.php';
 require_once SRC_PATH . '/email.php';
 require_once SRC_PATH . '/footer.php';
 
+$reservationConflicts = [];
+
+// Helpers
+function qc_format_uk(?string $iso): string
+{
+    if (!$iso) {
+        return '';
+    }
+    $dt = DateTime::createFromFormat('Y-m-d H:i:s', $iso);
+    return $dt ? $dt->format('d/m/Y H:i') : $iso;
+}
+
+/**
+ * Return current reservations (pending/confirmed) for a given model that overlap "now".
+ */
+function qc_current_reservations_for_model(PDO $pdo, int $modelId): array
+{
+    if ($modelId <= 0) {
+        return [];
+    }
+
+    $now = (new DateTime())->format('Y-m-d H:i:s');
+    $sql = "
+        SELECT r.id,
+               r.user_name,
+               r.user_email,
+               r.start_datetime,
+               r.end_datetime,
+               r.status,
+               ri.quantity
+          FROM reservation_items ri
+          JOIN reservations r ON r.id = ri.reservation_id
+         WHERE ri.model_id = :model_id
+           AND r.status IN ('pending','confirmed')
+           AND r.start_datetime <= :now
+           AND r.end_datetime   >= :now
+         ORDER BY r.start_datetime ASC
+    ";
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute([
+        ':model_id' => $modelId,
+        ':now'      => $now,
+    ]);
+
+    return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+}
+
 $active  = basename($_SERVER['PHP_SELF']);
 $isStaff = !empty($currentUser['is_admin']);
 
@@ -68,6 +115,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     'asset_tag'  => $assetTag,
                     'name'       => $assetName,
                     'model'      => $modelName,
+                    'model_id'   => (int)($asset['model']['id'] ?? 0),
                     'status'     => $status,
                 ];
                 $messages[] = "Added asset {$assetTag} ({$assetName}) to checkout list.";
@@ -76,8 +124,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         }
     } elseif ($mode === 'checkout') {
-        $checkoutTo = trim($_POST['checkout_to'] ?? '');
-        $note       = trim($_POST['note'] ?? '');
+        $checkoutTo      = trim($_POST['checkout_to'] ?? '');
+        $note            = trim($_POST['note'] ?? '');
+        $overrideAllowed = isset($_POST['override_conflicts']) && $_POST['override_conflicts'] === '1';
 
         if ($checkoutTo === '') {
             $errors[] = 'Please enter the Snipe-IT user (email or name) to check out to.';
@@ -93,14 +142,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     throw new Exception('Matched user has no valid ID.');
                 }
 
+                // Check for active reservations on these models right now
+                $reservationConflicts = [];
                 foreach ($checkoutAssets as $asset) {
-                    $assetId  = (int)$asset['id'];
-                    $assetTag = $asset['asset_tag'] ?? '';
-                    try {
-                        checkout_asset_to_user($assetId, $userId, $note, null);
-                        $messages[] = "Checked out asset {$assetTag} to {$userName}.";
-                    } catch (Throwable $e) {
-                        $errors[] = "Failed to check out {$assetTag}: " . $e->getMessage();
+                    $mid = (int)($asset['model_id'] ?? 0);
+                    if ($mid > 0) {
+                        $conf = qc_current_reservations_for_model($pdo, $mid);
+                        if (!empty($conf)) {
+                            $reservationConflicts[$asset['id']] = $conf;
+                        }
+                    }
+                }
+
+                if (!empty($reservationConflicts) && !$overrideAllowed) {
+                    $errors[] = 'Some assets are reserved for this time. Review who reserved them below or tick "Override" to proceed anyway.';
+                } else {
+                    foreach ($checkoutAssets as $asset) {
+                        $assetId  = (int)$asset['id'];
+                        $assetTag = $asset['asset_tag'] ?? '';
+                        try {
+                            checkout_asset_to_user($assetId, $userId, $note, null);
+                            $messages[] = "Checked out asset {$assetTag} to {$userName}." . (!empty($reservationConflicts[$assetId]) ? ' (Override used)' : '');
+                        } catch (Throwable $e) {
+                            $errors[] = "Failed to check out {$assetTag}: " . $e->getMessage();
+                        }
                     }
                 }
 
@@ -246,6 +311,34 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         </table>
                     </div>
 
+                    <?php if (!empty($reservationConflicts)): ?>
+                        <div class="alert alert-warning">
+                            <div class="fw-semibold mb-1">Some assets are reserved right now.</div>
+                            <div class="small mb-2">Review who has them reserved for the current window before overriding.</div>
+                            <ul class="mb-0">
+                                <?php foreach ($checkoutAssets as $asset): ?>
+                                    <?php if (empty($reservationConflicts[$asset['id']])) continue; ?>
+                                    <li class="mb-1">
+                                        <strong><?= h($asset['asset_tag']) ?></strong>
+                                        <?php if (!empty($asset['model'])): ?>
+                                            (<?= h($asset['model']) ?>)
+                                        <?php endif; ?>
+                                        <div class="small text-muted">
+                                            <?php foreach ($reservationConflicts[$asset['id']] as $conf): ?>
+                                                Reserved by <?= h($conf['user_name'] ?? 'Unknown') ?>
+                                                (<?= h($conf['user_email'] ?? '') ?>)
+                                                from <?= h(qc_format_uk($conf['start_datetime'] ?? '')) ?>
+                                                to <?= h(qc_format_uk($conf['end_datetime'] ?? '')) ?>.
+                                                Quantity: <?= (int)($conf['quantity'] ?? 0) ?>.
+                                                <br>
+                                            <?php endforeach; ?>
+                                        </div>
+                                    </li>
+                                <?php endforeach; ?>
+                            </ul>
+                        </div>
+                    <?php endif; ?>
+
                     <form method="post" class="border-top pt-3">
                         <input type="hidden" name="mode" value="checkout">
 
@@ -273,6 +366,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                        placeholder="Optional note to store with checkout">
                             </div>
                         </div>
+
+                        <?php if (!empty($reservationConflicts)): ?>
+                            <div class="form-check mb-3">
+                                <input class="form-check-input" type="checkbox" value="1" id="override_conflicts" name="override_conflicts">
+                                <label class="form-check-label" for="override_conflicts">
+                                    Override current reservations and check out anyway
+                                </label>
+                            </div>
+                        <?php endif; ?>
 
                         <button type="submit" class="btn btn-primary">
                             Check out all listed assets
